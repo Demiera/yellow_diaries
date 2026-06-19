@@ -1,10 +1,15 @@
+"""
+Django settings for The Yellow Diaries kiosk ordering system.
+"""
 from pathlib import Path
 import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-yellow-diaries-change-this-in-production'
+SECRET_KEY = 'django-insecure-yellow_diaries-change-in-production-xyz123'
+
 DEBUG = True
+
 ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
@@ -40,7 +45,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'store.context_processors.cart_count',
+                'core.context_processors.cart_count',
             ],
         },
     },
@@ -68,7 +73,7 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
+STATICFILES_DIRS = [BASE_DIR / 'core' / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
@@ -78,4 +83,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/login/'
+LOGOUT_REDIRECT_URL = '/'
+
+# Cart session key
+CART_SESSION_ID = 'cart'
