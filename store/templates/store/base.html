@@ -1,0 +1,47 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}The Yellow Diaries{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'store/css/style.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+{% if not hide_navbar %}
+<nav class="navbar">
+  <a href="{% url 'home' %}" class="brand">🍋 The Yellow Diaries</a>
+  <div class="nav-links">
+    {% if user.is_authenticated %}
+      <a href="{% url 'home' %}">Menu</a>
+      <a href="{% url 'cart' %}">🛒 Cart
+        {% if cart_count > 0 %}<span class="cart-badge">{{ cart_count }}</span>{% endif %}
+      </a>
+      <a href="{% url 'order_history' %}">My Orders</a>
+      <a href="{% url 'address_setup' %}">Address</a>
+      <a href="{% url 'logout' %}">Logout</a>
+    {% else %}
+      <a href="{% url 'login' %}">Login</a>
+      <a href="{% url 'register' %}">Register</a>
+    {% endif %}
+  </div>
+</nav>
+{% endif %}
+
+<div class="container">
+  {% if messages %}
+    <ul class="messages mt-2">
+      {% for msg in messages %}
+        <li class="{{ msg.tags }}">{{ msg }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</div>
+
+{% block content %}{% endblock %}
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>
