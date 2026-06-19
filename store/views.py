@@ -44,7 +44,7 @@ def menu(request):
     if search:
         products = products.filter(Q(name__icontains=search) | Q(description__icontains=search))
     selected_category = Category.objects.filter(slug=category_slug).first() if category_slug else None
-    return render(request, 'core/menu.html', {
+    return render(request, 'store/menu.html', {
         'categories': categories,
         'products': products,
         'selected_category': selected_category,
@@ -55,7 +55,7 @@ def menu(request):
 def product_detail(request, slug):
     product = get_object_or_404(Product, slug=slug, status='active')
     related = Product.objects.filter(category=product.category, status='active').exclude(pk=product.pk)[:4]
-    return render(request, 'core/product_detail.html', {'product': product, 'related': related})
+    return render(request, 'store/product_detail.html', {'product': product, 'related': related})
 
 
 # ─── AUTH ─────────────────────────────────────────────────────────────────────
@@ -69,7 +69,7 @@ def register_view(request):
         login(request, user)
         messages.success(request, f'Welcome to The Yellow Diaries, {user.first_name}!')
         return redirect('home')
-    return render(request, 'core/register.html', {'form': form})
+    return render(request, 'store/register.html', {'form': form})
 
 
 def login_view(request):
@@ -81,7 +81,7 @@ def login_view(request):
         login(request, user)
         messages.success(request, f'Welcome back, {user.first_name or user.username}!')
         return redirect_by_role(user)
-    return render(request, 'templates/store/login.html', {'form': form})
+    return render(request, 'store/login.html', {'form': form})
 
 
 def redirect_by_role(user):
@@ -204,7 +204,7 @@ def cart_view(request):
                 subtotal = product.price * data['quantity']
                 total += subtotal
                 items.append({'product': product, 'quantity': data['quantity'], 'subtotal': subtotal})
-    return render(request, 'core/cart.html', {'items': items, 'total': total, 'delivery_fee': 50})
+    return render(request, 'store/cart.html', {'items': items, 'total': total, 'delivery_fee': 50})
 
 
 def cart_add(request, product_id):
@@ -309,7 +309,7 @@ def checkout(request):
 
     addresses = Address.objects.filter(user=request.user)
     gcash = GCashSettings.objects.first()
-    return render(request, 'core/checkout.html', {
+    return render(request, 'store/checkout.html', {
         'form': form,
         'cart': cart,
         'addresses': addresses,
@@ -329,7 +329,7 @@ def gcash_payment(request, order_id):
         order.save()
         messages.success(request, 'Payment proof uploaded. Awaiting admin verification.')
         return redirect('order_detail', order_number=order.order_number)
-    return render(request, 'core/gcash_payment.html', {'order': order, 'form': form, 'gcash': gcash})
+    return render(request, 'store/gcash_payment.html', {'order': order, 'form': form, 'gcash': gcash})
 
 
 # ─── ORDERS ───────────────────────────────────────────────────────────────────
@@ -350,7 +350,7 @@ def order_detail(request, order_number):
             order.rider == user):
         messages.error(request, 'Access denied.')
         return redirect('home')
-    return render(request, 'core/order_detail.html', {'order': order})
+    return render(request, 'store/order_detail.html', {'order': order})
 
 
 # ─── NOTIFICATIONS ────────────────────────────────────────────────────────────
