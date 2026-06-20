@@ -1,0 +1,47 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}GCash Settings - Admin{% endblock %}
+
+{% block full_page %}
+{% if messages %}
+<div class="messages-container">
+  {% for msg in messages %}
+  <div class="alert alert-yd alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show" role="alert">
+    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+<div class="admin-layout">
+  {% include 'admin_panel/_sidebar.html' with active='gcash' %}
+  <main class="admin-content">
+    <header class="admin-topbar"><h4 class="mb-0">GCash Settings</h4></header>
+    <div class="p-4">
+      <div class="card border-0 shadow-sm" style="max-width:500px;">
+        <div class="card-body p-4">
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label class="form-label">GCash Number</label>
+              {{ form.gcash_number }}
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Account Name</label>
+              {{ form.account_name }}
+            </div>
+            <div class="mb-4">
+              <label class="form-label">QR Code</label>
+              {% if gcash.qr_code %}
+                <div class="mb-2"><img src="{{ gcash.qr_code.url }}" style="max-width:160px;" class="rounded border"></div>
+              {% endif %}
+              {{ form.qr_code }}
+            </div>
+            <button type="submit" class="btn btn-yd-green">Save Settings</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock full_page %}

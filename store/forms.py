@@ -7,6 +7,15 @@ from .models import UserProfile, Address, Category, Product, Order, GCashSetting
 # ─── AUTH FORMS ──────────────────────────────────────────────────────────────
 
 class RegisterForm(UserCreationForm):
+    """
+    Public self-registration form used on /register/.
+
+    IMPORTANT: this form is for customers only. There is no 'role' field here
+    on purpose — the role is hard-coded to 'customer' in save() below and is
+    never taken from user input or query params. Admin and rider accounts are
+    never created through this form; see RiderCreateForm (admin-only) below,
+    and the Django admin / management commands for creating admin accounts.
+    """
     first_name = forms.CharField(max_length=50, required=True)
     last_name = forms.CharField(max_length=50, required=True)
     email = forms.EmailField(required=True)
@@ -26,13 +35,56 @@ class RegisterForm(UserCreationForm):
         user.email = self.cleaned_data['email']
         user.first_name = self.cleaned_data['first_name']
         user.last_name = self.cleaned_data['last_name']
+
         if commit:
             user.save()
-            UserProfile.objects.create(
-                user=user,
-                role='customer',
-                phone=self.cleaned_data.get('phone', '')
-            )
+
+            # Signal may already create the profile, so use get_or_create.
+            profile, created = UserProfile.objects.get_or_create(user=user)
+            profile.role = 'customer'
+            profile.phone = self.cleaned_data.get('phone', '')
+            profile.save()
+
+        return user
+
+
+class RiderCreateForm(UserCreationForm):
+    """
+    Admin-only form for creating delivery rider accounts.
+
+    This is intentionally separate from RegisterForm: riders never self-register
+    through the public /register/ page. Only an admin, logged into the admin
+    panel, can create a rider account here, and the role is always forced to
+    'rider' — it is never exposed as a choice on the public registration form.
+    """
+    first_name = forms.CharField(max_length=50, required=True)
+    last_name = forms.CharField(max_length=50, required=True)
+    email = forms.EmailField(required=True)
+    phone = forms.CharField(max_length=20, required=True)
+
+    class Meta:
+        model = User
+        fields = ['username', 'first_name', 'last_name', 'email', 'phone', 'password1', 'password2']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs.update({'class': 'form-control'})
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.email = self.cleaned_data['email']
+        user.first_name = self.cleaned_data['first_name']
+        user.last_name = self.cleaned_data['last_name']
+
+        if commit:
+            user.save()
+            profile, created = UserProfile.objects.get_or_create(user=user)
+            profile.role = 'rider'
+            profile.phone = self.cleaned_data.get('phone', '')
+            profile.is_available = True
+            profile.save()
+
         return user
 
 

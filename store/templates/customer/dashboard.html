@@ -1,0 +1,97 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}My Dashboard - The Yellow Diaries{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h1 class="mb-1" style="font-family:'Playfair Display',serif;">Welcome back, {{ user.first_name|default:user.username }}!</h1>
+  <p class="text-muted mb-4">Here's a quick look at your account.</p>
+
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <a href="{% url 'order_list' %}" class="text-decoration-none">
+        <div class="card card-yd text-center p-3 h-100">
+          <i class="bi bi-bag fs-2" style="color:var(--yd-green);"></i>
+          <p class="fw-semibold mt-2 mb-0">My Orders</p>
+        </div>
+      </a>
+    </div>
+    <div class="col-6 col-md-3">
+      <a href="{% url 'address_list' %}" class="text-decoration-none">
+        <div class="card card-yd text-center p-3 h-100">
+          <i class="bi bi-geo-alt fs-2" style="color:var(--yd-green);"></i>
+          <p class="fw-semibold mt-2 mb-0">Addresses</p>
+        </div>
+      </a>
+    </div>
+    <div class="col-6 col-md-3">
+      <a href="{% url 'notifications' %}" class="text-decoration-none">
+        <div class="card card-yd text-center p-3 h-100">
+          <i class="bi bi-bell fs-2" style="color:var(--yd-green);"></i>
+          <p class="fw-semibold mt-2 mb-0">Notifications</p>
+        </div>
+      </a>
+    </div>
+    <div class="col-6 col-md-3">
+      <a href="{% url 'profile' %}" class="text-decoration-none">
+        <div class="card card-yd text-center p-3 h-100">
+          <i class="bi bi-person fs-2" style="color:var(--yd-green);"></i>
+          <p class="fw-semibold mt-2 mb-0">Profile</p>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h5 class="mb-3">Recent Orders</h5>
+          {% if orders %}
+            <table class="table table-sm align-middle mb-0">
+              <tbody>
+                {% for order in orders %}
+                <tr>
+                  <td>{{ order.order_number }}</td>
+                  <td>{{ order.created_at|date:"M d, Y" }}</td>
+                  <td>&#8369;{{ order.grand_total }}</td>
+                  <td>
+                    <span class="badge bg-{% if order.status == 'delivered' %}success{% elif order.status == 'cancelled' or order.status == 'failed' %}danger{% else %}info text-dark{% endif %}">
+                      {{ order.get_status_display }}
+                    </span>
+                  </td>
+                  <td><a href="{% url 'order_detail' order.order_number %}" class="btn btn-sm btn-outline-success">View</a></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <p class="text-muted mb-0">You haven't placed any orders yet. <a href="{% url 'menu' %}">Browse the menu</a>.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h5 class="mb-3">Unread Notifications</h5>
+          {% if notifications %}
+            <ul class="list-unstyled mb-0">
+              {% for n in notifications %}
+                <li class="border-bottom py-2 small">
+                  <i class="bi bi-bell-fill me-2" style="color:var(--yd-yellow-dark);"></i>{{ n.message }}
+                </li>
+              {% endfor %}
+            </ul>
+            <a href="{% url 'notifications' %}" class="btn btn-sm btn-outline-success mt-3">View All</a>
+          {% else %}
+            <p class="text-muted mb-0">No new notifications.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

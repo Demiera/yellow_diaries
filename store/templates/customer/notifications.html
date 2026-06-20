@@ -1,0 +1,37 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}Notifications - The Yellow Diaries{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h1 class="mb-4" style="font-family:'Playfair Display',serif;">Notifications</h1>
+
+  {% if notifications %}
+    <div class="list-group">
+      {% for n in notifications %}
+        <div class="list-group-item d-flex align-items-start gap-3 py-3 {% if not n.is_read %}bg-light{% endif %}">
+          <i class="bi
+            {% if n.type == 'payment_approved' %}bi-check-circle-fill text-success
+            {% elif n.type == 'payment_rejected' %}bi-x-circle-fill text-danger
+            {% elif n.type == 'order_assigned' %}bi-bicycle text-warning
+            {% elif n.type == 'order_delivered' %}bi-box-seam text-success
+            {% else %}bi-bell-fill text-secondary{% endif %} fs-4"></i>
+          <div class="flex-grow-1">
+            <p class="mb-1">{{ n.message }}</p>
+            <small class="text-muted">{{ n.created_at|date:"M d, Y g:i A" }}</small>
+          </div>
+          {% if n.order %}
+            <a href="{% url 'order_detail' n.order.order_number %}" class="btn btn-sm btn-outline-success align-self-center">View Order</a>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="text-center py-5">
+      <i class="bi bi-bell" style="font-size:4rem;color:#ccc;"></i>
+      <p class="text-muted mt-3">You have no notifications yet.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,73 +1,75 @@
 {% extends 'store/base.html' %}
+{% load static %}
 
-{% block title %}Menu{% endblock %}
-
-{% block extra_head %}
-<style>
-    .menu-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 20px;
-    }
-    
-    .menu-list {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 20px;
-    }
-    
-    .menu-item {
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        padding: 15px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    .menu-item h2 {
-        margin-top: 0;
-    }
-    
-    .description {
-        color: #666;
-        font-size: 0.95em;
-    }
-    
-    .price {
-        font-size: 1.25em;
-        font-weight: bold;
-        color: #2c3e50;
-    }
-    
-    .category {
-        display: inline-block;
-        background-color: #ecf0f1;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 0.85em;
-    }
-</style>
-{% endblock %}
+{% block title %}Menu - The Yellow Diaries{% endblock %}
 
 {% block content %}
-<div class="menu-container">
-    <h1>Menu</h1>
-    
-    {% if menu_items %}
-        <div class="menu-list">
-            {% for item in menu_items %}
-                <div class="menu-item">
-                    <h2>{{ item.name }}</h2>
-                    <p class="description">{{ item.description }}</p>
-                    <p class="price">${{ item.price }}</p>
-                    {% if item.category %}
-                        <span class="category">{{ item.category }}</span>
-                    {% endif %}
-                </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <p>No menu items available.</p>
-    {% endif %}
-</div>
+<div class="container py-4">
+  <h1 class="mb-4" style="font-family:'Playfair Display',serif;">Menu</h1>
 
+  <form method="get" class="row g-2 mb-4">
+    {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category.slug }}">{% endif %}
+    <div class="col-md-6">
+      <input type="text" name="q" value="{{ search }}" class="form-control"
+             placeholder="Search drinks, snacks...">
+    </div>
+    <div class="col-md-3">
+      <button type="submit" class="btn btn-yd-green w-100">Search</button>
+    </div>
+  </form>
+
+  <div class="row">
+    <!-- Category sidebar -->
+    <div class="col-md-3 mb-4">
+      <div class="list-group">
+        <a href="{% url 'menu' %}{% if search %}?q={{ search }}{% endif %}"
+           class="list-group-item list-group-item-action {% if not selected_category %}active{% endif %}">
+          All Items
+        </a>
+        {% for cat in categories %}
+          <a href="?category={{ cat.slug }}{% if search %}&q={{ search }}{% endif %}"
+             class="list-group-item list-group-item-action {% if selected_category.id == cat.id %}active{% endif %}">
+            {{ cat.name }}
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Product grid -->
+    <div class="col-md-9">
+      {% if products %}
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4">
+          {% for product in products %}
+            <div class="col">
+              <div class="card h-100 shadow-sm border-0">
+                {% if product.image %}
+                  <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}"
+                       style="height:180px;object-fit:cover;">
+                {% else %}
+                  <div class="bg-light d-flex align-items-center justify-content-center" style="height:180px;">
+                    <i class="bi bi-cup-straw fs-1 text-muted"></i>
+                  </div>
+                {% endif %}
+                <div class="card-body d-flex flex-column">
+                  <h5 class="card-title">{{ product.name }}</h5>
+                  <p class="card-text text-muted small flex-grow-1">{{ product.description|truncatewords:15 }}</p>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="fw-bold fs-5">&#8369;{{ product.price }}</span>
+                    {% if product.in_stock %}
+                      <a href="{% url 'product_detail' product.slug %}" class="btn btn-sm btn-yd-green">View</a>
+                    {% else %}
+                      <span class="badge bg-secondary">Out of stock</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-muted">No menu items available{% if search %} for "{{ search }}"{% endif %}.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
 {% endblock %}

@@ -1,0 +1,71 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}Rider Dashboard - The Yellow Diaries{% endblock %}
+
+{% block full_page %}
+{% if messages %}
+<div class="messages-container">
+  {% for msg in messages %}
+  <div class="alert alert-yd alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show" role="alert">
+    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+<div class="rider-layout">
+  <header class="rider-topbar">
+    <a href="{% url 'home' %}" class="rider-brand">The Yellow <span>Diaries</span> <small>Rider</small></a>
+    <div class="d-flex align-items-center gap-3">
+      <span class="text-muted small">{{ user.first_name|default:user.username }}</span>
+      <form method="post" action="{% url 'logout' %}">{% csrf_token %}
+        <button class="btn btn-sm btn-outline-secondary">Logout</button>
+      </form>
+    </div>
+  </header>
+
+  <div class="container py-4">
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-4">
+        <div class="card-yd p-3 stat-card stat-green"><i class="bi bi-bicycle"></i><h3>{{ assigned|length }}</h3><p>Active Deliveries</p></div>
+      </div>
+      <div class="col-6 col-md-4">
+        <div class="card-yd p-3 stat-card stat-yellow"><i class="bi bi-check-circle"></i><h3>{{ completed_today }}</h3><p>Delivered Today</p></div>
+      </div>
+      <div class="col-12 col-md-4">
+        <a href="{% url 'rider_deliveries' %}" class="card-yd p-3 stat-card stat-green text-decoration-none d-flex flex-column h-100 justify-content-center">
+          <i class="bi bi-list-check"></i><p class="mb-0">View All Deliveries</p>
+        </a>
+      </div>
+    </div>
+
+    <h5 class="mb-3">Assigned Orders</h5>
+    {% if assigned %}
+      <div class="row g-3">
+        {% for order in assigned %}
+        <div class="col-md-6">
+          <div class="card card-yd p-3">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <strong>#{{ order.order_number }}</strong>
+              <span class="badge badge-status-{{ order.status }}">{{ order.get_status_display }}</span>
+            </div>
+            <p class="mb-1 small">{{ order.customer.first_name|default:order.customer.username }}</p>
+            {% if order.address %}
+              <p class="mb-1 small text-muted">{{ order.address.street }}, {{ order.address.barangay }}, {{ order.address.city }}</p>
+              <p class="mb-2 small text-muted"><i class="bi bi-telephone me-1"></i>{{ order.address.contact_number }}</p>
+            {% endif %}
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="fw-bold">&#8369;{{ order.grand_total }}</span>
+              <span class="small">{{ order.get_payment_method_display }}</span>
+            </div>
+            <a href="{% url 'rider_deliveries' %}" class="btn btn-sm btn-yd-green w-100 mt-2">Manage Delivery</a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-muted">You have no active deliveries right now.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock full_page %}

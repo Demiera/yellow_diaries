@@ -15,7 +15,7 @@ from .models import (
     Notification, GCashSettings
 )
 from .forms import (
-    RegisterForm, ProfileForm, AddressForm,
+    RegisterForm, RiderCreateForm, ProfileForm, AddressForm,
     CategoryForm, ProductForm, CheckoutForm,
     GCashPaymentForm, PaymentVerificationForm,
     AssignRiderForm, GCashSettingsForm, DeliveryUpdateForm
@@ -28,7 +28,7 @@ from .decorators import admin_required, rider_required, send_notification
 def home(request):
     categories = Category.objects.filter(is_active=True)
     featured = Product.objects.filter(status='active', is_available=True).order_by('-created_at')[:8]
-    return render(request, 'templates/store/home.html', {
+    return render(request, 'store/home.html', {
         'categories': categories,
         'featured': featured,
     })
@@ -60,6 +60,28 @@ def product_detail(request, slug):
 
 # ─── AUTH ─────────────────────────────────────────────────────────────────────
 
+def merge_session_cart(request, user):
+    """Move any items added to the cart before login/registration into the
+    user's persistent cart, so a guest who adds items doesn't lose them
+    the moment they create an account or sign in."""
+    session_cart = request.session.get('cart', {})
+    if not session_cart:
+        return
+    cart, _ = Cart.objects.get_or_create(user=user)
+    for pid, data in session_cart.items():
+        product = Product.objects.filter(pk=pid, status='active').first()
+        if not product:
+            continue
+        item, created = CartItem.objects.get_or_create(cart=cart, product=product)
+        if created:
+            item.quantity = data.get('quantity', 1)
+        else:
+            item.quantity += data.get('quantity', 1)
+        item.save()
+    request.session['cart'] = {}
+    request.session.modified = True
+
+
 def register_view(request):
     if request.user.is_authenticated:
         return redirect('home')
@@ -67,6 +89,7 @@ def register_view(request):
     if request.method == 'POST' and form.is_valid():
         user = form.save()
         login(request, user)
+        merge_session_cart(request, user)
         messages.success(request, f'Welcome to The Yellow Diaries, {user.first_name}!')
         return redirect('home')
     return render(request, 'store/register.html', {'form': form})
@@ -76,9 +99,12 @@ def login_view(request):
     if request.user.is_authenticated:
         return redirect_by_role(request.user)
     form = AuthenticationForm(request, data=request.POST or None)
+    for field in form.fields.values():
+        field.widget.attrs.update({'class': 'form-control'})
     if request.method == 'POST' and form.is_valid():
         user = form.get_user()
         login(request, user)
+        merge_session_cart(request, user)
         messages.success(request, f'Welcome back, {user.first_name or user.username}!')
         return redirect_by_role(user)
     return render(request, 'store/login.html', {'form': form})
@@ -337,7 +363,7 @@ def gcash_payment(request, order_id):
 @login_required
 def order_list(request):
     orders = Order.objects.filter(customer=request.user).order_by('-created_at')
-    return render(request, 'customer/orders.html', {'orders': orders})
+    return render(request, 'store/order_history.html', {'orders': orders})
 
 
 @login_required
@@ -627,8 +653,41 @@ def admin_gcash_settings(request):
 @admin_required
 def admin_users(request):
     from django.contrib.auth.models import User
-    users = User.objects.select_related('profile').all()
+    users = User.objects.select_related('profile').filter(profile__role='customer')
     return render(request, 'admin_panel/users.html', {'users': users})
+
+
+# ─── ADMIN: RIDERS ────────────────────────────────────────────────────────────
+# Riders are never self-registered. Only an admin can create a rider account,
+# through this separate flow — distinct from the public customer RegisterForm.
+
+@admin_required
+def admin_riders(request):
+    from django.contrib.auth.models import User
+    riders = User.objects.select_related('profile').filter(profile__role='rider')
+    return render(request, 'admin_panel/riders.html', {'riders': riders})
+
+
+@admin_required
+def admin_rider_add(request):
+    form = RiderCreateForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        rider = form.save()
+        messages.success(request, f'Rider account "{rider.username}" created successfully.')
+        return redirect('admin_riders')
+    return render(request, 'admin_panel/rider_form.html', {'form': form})
+
+
+@admin_required
+def admin_rider_toggle_availability(request, pk):
+    from django.contrib.auth.models import User
+    rider = get_object_or_404(User, pk=pk, profile__role='rider')
+    if request.method == 'POST':
+        rider.profile.is_available = not rider.profile.is_available
+        rider.profile.save()
+        status = 'available' if rider.profile.is_available else 'unavailable'
+        messages.success(request, f'{rider.username} marked as {status}.')
+    return redirect('admin_riders')
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

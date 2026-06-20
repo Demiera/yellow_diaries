@@ -1,0 +1,94 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}{{ product.name }} - The Yellow Diaries{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'menu' %}">Menu</a></li>
+      <li class="breadcrumb-item active">{{ product.name }}</li>
+    </ol>
+  </nav>
+
+  <div class="row g-4">
+    <div class="col-md-6">
+      {% if product.image %}
+        <img src="{{ product.image.url }}" class="img-fluid rounded shadow-sm" alt="{{ product.name }}">
+      {% else %}
+        <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height:350px;">
+          <i class="bi bi-cup-straw" style="font-size:5rem;color:#ccc;"></i>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="col-md-6">
+      {% if product.category %}<span class="category">{{ product.category.name }}</span>{% endif %}
+      <h1 class="mt-2" style="font-family:'Playfair Display',serif;">{{ product.name }}</h1>
+      <p class="text-muted">{{ product.description }}</p>
+
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <span class="fw-bold fs-3" style="color:var(--yd-green-dark);">&#8369;{{ product.price }}</span>
+        {% if product.size != 'N/A' %}<span class="badge bg-light text-dark border">Size: {{ product.get_size_display }}</span>{% endif %}
+      </div>
+
+      <p>
+        {% if product.in_stock %}
+          <span class="badge bg-success">In Stock ({{ product.stock }} available)</span>
+        {% else %}
+          <span class="badge bg-secondary">Out of Stock</span>
+        {% endif %}
+      </p>
+
+      {% if product.in_stock %}
+        <form method="post" action="{% url 'cart_add' product.id %}" class="d-flex align-items-center gap-2 mb-4">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{% url 'product_detail' product.slug %}">
+          <label for="quantity" class="form-label mb-0">Qty</label>
+          <input type="number" id="quantity" name="quantity" value="1" min="1" max="{{ product.stock }}"
+                 class="form-control" style="width:90px;">
+          <button type="submit" class="btn btn-yd-green px-4">
+            <i class="bi bi-cart-plus me-1"></i>Add to Cart
+          </button>
+        </form>
+      {% else %}
+        <button class="btn btn-secondary px-4 mb-4" disabled>Out of Stock</button>
+      {% endif %}
+
+      <a href="{% url 'menu' %}" class="btn btn-outline-success">
+        <i class="bi bi-arrow-left me-1"></i>Back to Menu
+      </a>
+    </div>
+  </div>
+
+  {% if related %}
+  <div class="mt-5">
+    <h3 class="mb-3" style="font-family:'Playfair Display',serif;">You might also like</h3>
+    <div class="row row-cols-2 row-cols-md-4 g-3">
+      {% for item in related %}
+        <div class="col">
+          <div class="card h-100 shadow-sm border-0">
+            {% if item.image %}
+              <img src="{{ item.image.url }}" class="card-img-top" alt="{{ item.name }}" style="height:130px;object-fit:cover;">
+            {% else %}
+              <div class="bg-light d-flex align-items-center justify-content-center" style="height:130px;">
+                <i class="bi bi-cup-straw fs-3 text-muted"></i>
+              </div>
+            {% endif %}
+            <div class="card-body py-2">
+              <h6 class="card-title mb-1">{{ item.name }}</h6>
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="fw-bold">&#8369;{{ item.price }}</span>
+                <a href="{% url 'product_detail' item.slug %}" class="btn btn-sm btn-outline-success">View</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

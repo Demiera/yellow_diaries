@@ -1,0 +1,57 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}My Orders - The Yellow Diaries{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h1 class="mb-4" style="font-family:'Playfair Display',serif;">My Orders</h1>
+
+  {% if orders %}
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th>Order #</th>
+            <th>Date</th>
+            <th>Total</th>
+            <th>Payment</th>
+            <th>Payment Status</th>
+            <th>Order Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in orders %}
+          <tr>
+            <td>{{ order.order_number }}</td>
+            <td>{{ order.created_at|date:"M d, Y" }}</td>
+            <td>&#8369;{{ order.grand_total }}</td>
+            <td>{{ order.get_payment_method_display }}</td>
+            <td>
+              <span class="badge bg-{% if order.payment_status == 'paid' %}success{% elif order.payment_status == 'rejected' %}danger{% else %}warning text-dark{% endif %}">
+                {{ order.get_payment_status_display }}
+              </span>
+            </td>
+            <td>
+              <span class="badge bg-{% if order.status == 'delivered' %}success{% elif order.status == 'cancelled' or order.status == 'failed' %}danger{% else %}info text-dark{% endif %}">
+                {{ order.get_status_display }}
+              </span>
+            </td>
+            <td>
+              <a href="{% url 'order_detail' order.order_number %}" class="btn btn-sm btn-outline-success">View</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="text-center py-5">
+      <i class="bi bi-bag" style="font-size:4rem;color:#ccc;"></i>
+      <p class="text-muted mt-3">You haven't placed any orders yet.</p>
+      <a href="{% url 'menu' %}" class="btn btn-yd-green">Browse Menu</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,100 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}My Deliveries - Rider{% endblock %}
+
+{% block full_page %}
+{% if messages %}
+<div class="messages-container">
+  {% for msg in messages %}
+  <div class="alert alert-yd alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show" role="alert">
+    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+<div class="rider-layout">
+  <header class="rider-topbar">
+    <a href="{% url 'home' %}" class="rider-brand">The Yellow <span>Diaries</span> <small>Rider</small></a>
+    <div class="d-flex align-items-center gap-3">
+      <a href="{% url 'rider_dashboard' %}" class="btn btn-sm btn-outline-success">Dashboard</a>
+      <form method="post" action="{% url 'logout' %}">{% csrf_token %}
+        <button class="btn btn-sm btn-outline-secondary">Logout</button>
+      </form>
+    </div>
+  </header>
+
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h4 class="mb-0">My Deliveries</h4>
+      <form method="get" class="d-flex gap-2">
+        <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All Statuses</option>
+          <option value="assigned" {% if request.GET.status == 'assigned' %}selected{% endif %}>Rider Assigned</option>
+          <option value="out_for_delivery" {% if request.GET.status == 'out_for_delivery' %}selected{% endif %}>Out for Delivery</option>
+          <option value="delivered" {% if request.GET.status == 'delivered' %}selected{% endif %}>Delivered</option>
+          <option value="failed" {% if request.GET.status == 'failed' %}selected{% endif %}>Failed Delivery</option>
+        </select>
+      </form>
+    </div>
+
+    {% if orders %}
+      <div class="row g-3">
+        {% for order in orders %}
+        <div class="col-md-6">
+          <div class="card card-yd p-3 h-100">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <strong>#{{ order.order_number }}</strong>
+              <span class="badge badge-status-{{ order.status }}">{{ order.get_status_display }}</span>
+            </div>
+            <p class="mb-1 small fw-semibold">{{ order.customer.first_name|default:order.customer.username }}</p>
+            {% if order.address %}
+              <p class="mb-1 small text-muted">{{ order.address.street }}, {{ order.address.barangay }}, {{ order.address.city }}</p>
+              <p class="mb-2 small text-muted"><i class="bi bi-telephone me-1"></i>{{ order.address.contact_number }}</p>
+            {% endif %}
+            <table class="table table-sm mb-2">
+              <tbody>
+                {% for item in order.items.all %}
+                <tr><td class="small">{{ item.quantity }}x {{ item.product_name }}</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            <div class="d-flex justify-content-between mb-2">
+              <span class="fw-bold">&#8369;{{ order.grand_total }}</span>
+              <span class="badge bg-{% if order.payment_status == 'paid' %}success{% else %}warning text-dark{% endif %}">
+                {{ order.get_payment_method_display }} - {{ order.get_payment_status_display }}
+              </span>
+            </div>
+
+            <form method="post" action="{% url 'rider_update_delivery' order.pk %}" class="mb-2">
+              {% csrf_token %}
+              <div class="d-flex gap-2 mb-2">
+                <select name="status" class="form-select form-select-sm">
+                  <option value="assigned" {% if order.status == 'assigned' %}selected{% endif %}>Accept Delivery</option>
+                  <option value="out_for_delivery" {% if order.status == 'out_for_delivery' %}selected{% endif %}>Picked Up / Out for Delivery</option>
+                  <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Delivered</option>
+                  <option value="failed" {% if order.status == 'failed' %}selected{% endif %}>Failed Delivery</option>
+                </select>
+                <button type="submit" class="btn btn-sm btn-yd-green">Update</button>
+              </div>
+              <textarea name="delivery_notes" class="form-control form-control-sm" rows="2" placeholder="Delivery notes (optional)">{{ order.delivery_notes }}</textarea>
+            </form>
+
+            {% if order.payment_method == 'cod' and order.payment_status != 'paid' %}
+              <form method="post" action="{% url 'rider_cod_received' order.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-yd-primary w-100">
+                  <i class="bi bi-cash-coin me-1"></i>Payment Received (COD)
+                </button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-muted">No deliveries found.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock full_page %}

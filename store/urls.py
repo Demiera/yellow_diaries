@@ -53,6 +53,9 @@ urlpatterns = [
     path('admin-panel/reports/', views.admin_reports, name='admin_reports'),
     path('admin-panel/gcash-settings/', views.admin_gcash_settings, name='admin_gcash_settings'),
     path('admin-panel/users/', views.admin_users, name='admin_users'),
+    path('admin-panel/riders/', views.admin_riders, name='admin_riders'),
+    path('admin-panel/riders/add/', views.admin_rider_add, name='admin_rider_add'),
+    path('admin-panel/riders/<int:pk>/toggle/', views.admin_rider_toggle_availability, name='admin_rider_toggle_availability'),
 
     # ── Rider ──────────────────────────────────────────
     path('rider/', views.rider_dashboard, name='rider_dashboard'),

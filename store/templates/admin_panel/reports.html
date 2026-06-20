@@ -1,0 +1,86 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}Reports - Admin{% endblock %}
+
+{% block full_page %}
+{% if messages %}
+<div class="messages-container">
+  {% for msg in messages %}
+  <div class="alert alert-yd alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show" role="alert">
+    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+<div class="admin-layout">
+  {% include 'admin_panel/_sidebar.html' with active='reports' %}
+  <main class="admin-content">
+    <header class="admin-topbar"><h4 class="mb-0">Sales Reports</h4></header>
+    <div class="p-4">
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+          <div class="card-yd p-3 stat-card stat-green"><i class="bi bi-currency-exchange"></i><h3>&#8369;{{ monthly_rev }}</h3><p>This Month's Revenue</p></div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="card-yd p-3 stat-card stat-yellow"><i class="bi bi-check-circle"></i><h3>{{ completed }}</h3><p>Completed Orders</p></div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="card-yd p-3 stat-card stat-green"><i class="bi bi-x-circle"></i><h3>{{ cancelled }}</h3><p>Cancelled Orders</p></div>
+        </div>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-lg-6">
+          <div class="card border-0 shadow-sm">
+            <div class="card-body">
+              <h5 class="mb-3">Daily Sales (Last 7 Days)</h5>
+              <table class="table table-sm mb-0">
+                <thead><tr><th>Date</th><th class="text-end">Revenue</th></tr></thead>
+                <tbody>
+                  {% for d in daily %}
+                  <tr><td>{{ d.date }}</td><td class="text-end">&#8369;{{ d.revenue }}</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+              <h5 class="mb-3">Top Products</h5>
+              {% if top_products %}
+                <table class="table table-sm mb-0">
+                  <thead><tr><th>Product</th><th class="text-end">Qty Sold</th></tr></thead>
+                  <tbody>
+                    {% for p in top_products %}
+                    <tr><td>{{ p.product_name }}</td><td class="text-end">{{ p.total_qty }}</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              {% else %}<p class="text-muted mb-0">No sales data yet.</p>{% endif %}
+            </div>
+          </div>
+          <div class="card border-0 shadow-sm">
+            <div class="card-body">
+              <h5 class="mb-3">Top Categories</h5>
+              {% if top_categories %}
+                <table class="table table-sm mb-0">
+                  <thead><tr><th>Category</th><th class="text-end">Qty Sold</th></tr></thead>
+                  <tbody>
+                    {% for c in top_categories %}
+                    <tr><td>{{ c.product__category__name|default:"Uncategorized" }}</td><td class="text-end">{{ c.total_qty }}</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              {% else %}<p class="text-muted mb-0">No sales data yet.</p>{% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock full_page %}

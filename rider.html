@@ -1,0 +1,69 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}Riders - Admin{% endblock %}
+
+{% block full_page %}
+{% if messages %}
+<div class="messages-container">
+  {% for msg in messages %}
+  <div class="alert alert-yd alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show" role="alert">
+    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+<div class="admin-layout">
+  {% include 'admin_panel/_sidebar.html' with active='riders' %}
+  <main class="admin-content">
+    <header class="admin-topbar">
+      <h4 class="mb-0">Delivery Riders</h4>
+      <a href="{% url 'admin_rider_add' %}" class="btn btn-yd-green btn-sm"><i class="bi bi-plus-lg me-1"></i>Add Rider</a>
+    </header>
+    <div class="p-4">
+      <p class="text-muted small mb-3">
+        <i class="bi bi-info-circle me-1"></i>
+        Riders cannot sign up through the public registration page — accounts are created here by an admin.
+      </p>
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table align-middle">
+              <thead><tr><th>Username</th><th>Name</th><th>Email</th><th>Phone</th><th>Availability</th><th>Active Deliveries</th><th>Joined</th><th></th></tr></thead>
+              <tbody>
+                {% for rider in riders %}
+                <tr>
+                  <td>{{ rider.username }}</td>
+                  <td>{{ rider.first_name }} {{ rider.last_name }}</td>
+                  <td>{{ rider.email }}</td>
+                  <td>{{ rider.profile.phone|default:"—" }}</td>
+                  <td>
+                    {% if rider.profile.is_available %}
+                      <span class="badge bg-success">Available</span>
+                    {% else %}
+                      <span class="badge bg-secondary">Unavailable</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ rider.deliveries.count }}</td>
+                  <td>{{ rider.date_joined|date:"M d, Y" }}</td>
+                  <td>
+                    <form method="post" action="{% url 'admin_rider_toggle_availability' rider.pk %}">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        {% if rider.profile.is_available %}Mark Unavailable{% else %}Mark Available{% endif %}
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center text-muted py-4">No riders yet. Add one to get started.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock full_page %}

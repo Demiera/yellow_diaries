@@ -1,0 +1,59 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}My Profile - The Yellow Diaries{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h1 class="mb-4" style="font-family:'Playfair Display',serif;">My Profile</h1>
+
+  <div class="row justify-content-center">
+    <div class="col-md-7">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="text-center mb-4">
+              {% if form.instance.avatar %}
+                <img src="{{ form.instance.avatar.url }}" alt="Avatar" class="rounded-circle border" style="width:100px;height:100px;object-fit:cover;">
+              {% else %}
+                <i class="bi bi-person-circle" style="font-size:6rem;color:var(--yd-yellow-dark);"></i>
+              {% endif %}
+              <div class="mt-2">
+                {{ form.avatar }}
+                {% if form.avatar.errors %}<div class="text-danger small">{{ form.avatar.errors }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label for="{{ form.first_name.id_for_label }}" class="form-label">First Name</label>
+                {{ form.first_name }}
+                {% if form.first_name.errors %}<div class="text-danger small">{{ form.first_name.errors }}</div>{% endif %}
+              </div>
+              <div class="col-md-6">
+                <label for="{{ form.last_name.id_for_label }}" class="form-label">Last Name</label>
+                {{ form.last_name }}
+                {% if form.last_name.errors %}<div class="text-danger small">{{ form.last_name.errors }}</div>{% endif %}
+              </div>
+              <div class="col-12">
+                <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+                {{ form.email }}
+                {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors }}</div>{% endif %}
+              </div>
+              <div class="col-12">
+                <label for="{{ form.phone.id_for_label }}" class="form-label">Phone</label>
+                {{ form.phone }}
+                {% if form.phone.errors %}<div class="text-danger small">{{ form.phone.errors }}</div>{% endif %}
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-yd-green w-100 mt-4">Save Changes</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
