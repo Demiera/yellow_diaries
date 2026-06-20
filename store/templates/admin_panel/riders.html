@@ -1,0 +1,84 @@
+{% extends 'admin_panel/base_admin.html' %}
+{% load static %}
+
+{% block title %}Riders — Admin{% endblock %}
+{% block page_title %}Riders{% endblock %}
+{% block nav_riders %}active{% endblock %}
+
+{% block topbar_action %}
+  <a href="{% url 'admin_rider_add' %}" class="adm-topbar-cta">
+    <i class="bi bi-plus-lg"></i><span>Add Rider</span>
+  </a>
+{% endblock %}
+
+{% block content %}
+{% if riders %}
+<div class="adm-table-wrap">
+  <div class="table-responsive">
+    <table class="adm-table">
+      <thead>
+        <tr>
+          <th>Rider</th>
+          <th>Contact</th>
+          <th>Status</th>
+          <th>Active Deliveries</th>
+          <th>Completed</th>
+          <th>Joined</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rider in riders %}
+        <tr>
+          <td class="fw-semibold">{{ rider.first_name }} {{ rider.last_name }}<br>
+            <span style="font-weight:400;font-size:0.78rem;color:var(--adm-text-muted);">@{{ rider.username }}</span>
+          </td>
+          <td style="font-size:0.83rem;">
+            {{ rider.email|default:"—" }}<br>
+            <span style="color:var(--adm-text-muted);">{{ rider.profile.phone|default:"—" }}</span>
+          </td>
+          <td>
+            {% if rider.profile.is_available %}
+              <span class="adm-pill adm-pill-green">Available</span>
+            {% else %}
+              <span class="adm-pill adm-pill-gray">Unavailable</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if rider.active_deliveries %}
+              <span class="adm-pill adm-pill-blue">{{ rider.active_deliveries }}</span>
+            {% else %}
+              <span style="color:var(--adm-text-muted);">0</span>
+            {% endif %}
+          </td>
+          <td>{{ rider.completed_deliveries }}</td>
+          <td style="font-size:0.8rem;color:var(--adm-text-muted);">{{ rider.date_joined|date:"M d, Y" }}</td>
+          <td>
+            <form method="post" action="{% url 'admin_rider_toggle_availability' rider.pk %}">
+              {% csrf_token %}
+              {% if rider.profile.is_available %}
+                <button type="submit" class="adm-btn adm-btn-ghost adm-btn-sm">Mark Unavailable</button>
+              {% else %}
+                <button type="submit" class="adm-btn adm-btn-primary adm-btn-sm">Mark Available</button>
+              {% endif %}
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="adm-card">
+  <div class="adm-empty">
+    <div class="adm-empty-icon"><i class="bi bi-bicycle"></i></div>
+    <h4>No riders yet</h4>
+    <p>Add your first delivery rider to start assigning orders.</p>
+    <a href="{% url 'admin_rider_add' %}" class="adm-btn adm-btn-primary mt-3">
+      <i class="bi bi-plus-lg"></i> Add Rider
+    </a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

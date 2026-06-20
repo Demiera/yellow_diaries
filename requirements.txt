@@ -1,6 +1,9 @@
-asgiref  3.11.1
-Django   6.0.6
-pillow   12.2.0
-pip      26.1.2
-sqlparse 0.5.5
-tzdata   2026.2
+Package    Version
+---------- -------
+asgiref    3.11.1
+Django     6.0.6
+pillow     12.2.0
+pip        26.1.2
+sqlparse   0.5.5
+tzdata     2026.2
+whitenoise 6.12.0

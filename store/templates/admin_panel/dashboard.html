@@ -1,138 +1,207 @@
-{% extends 'store/base.html' %}
+{% extends 'admin_panel/base_admin.html' %}
 {% load static %}
 
-{% block title %}Admin Dashboard - The Yellow Diaries{% endblock %}
+{% block title %}Dashboard — The Yellow Diaries{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
 
-{% block full_page %}
-{% if messages %}
-<div class="messages-container">
-  {% for msg in messages %}
-  <div class="alert alert-yd alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show" role="alert">
-    {{ msg }}
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+{% block content %}
+<p class="mb-4" style="color:var(--adm-text-muted);font-size:0.875rem;">
+  Welcome back, <strong>{{ user.first_name|default:user.username }}</strong> — here's what's happening today.
+</p>
+
+<!-- ── Stat Cards ── -->
+<div class="adm-stat-grid mb-5">
+  <div class="adm-stat-card is-green">
+    <div class="adm-stat-icon is-green"><i class="bi bi-currency-exchange"></i></div>
+    <div class="adm-stat-body">
+      <p class="adm-stat-value">&#8369;{{ total_revenue }}</p>
+      <p class="adm-stat-label">Total Revenue</p>
+    </div>
   </div>
-  {% endfor %}
+  <div class="adm-stat-card is-green">
+    <div class="adm-stat-icon is-green"><i class="bi bi-check-circle-fill"></i></div>
+    <div class="adm-stat-body">
+      <p class="adm-stat-value">{{ paid_orders }}</p>
+      <p class="adm-stat-label">Paid Orders</p>
+    </div>
+  </div>
+  <div class="adm-stat-card is-yellow">
+    <div class="adm-stat-icon is-yellow"><i class="bi bi-hourglass-split"></i></div>
+    <div class="adm-stat-body">
+      <p class="adm-stat-value">{{ pending_verification }}</p>
+      <p class="adm-stat-label">Pending Verification</p>
+    </div>
+  </div>
+  <div class="adm-stat-card is-red">
+    <div class="adm-stat-icon is-red"><i class="bi bi-exclamation-triangle-fill"></i></div>
+    <div class="adm-stat-body">
+      <p class="adm-stat-value">{{ unpaid_orders }}</p>
+      <p class="adm-stat-label">Unpaid Orders</p>
+    </div>
+  </div>
+  <div class="adm-stat-card is-blue">
+    <div class="adm-stat-icon is-blue"><i class="bi bi-cash-coin"></i></div>
+    <div class="adm-stat-body">
+      <p class="adm-stat-value">{{ cod_orders }}</p>
+      <p class="adm-stat-label">COD Orders</p>
+    </div>
+  </div>
+  <div class="adm-stat-card is-purple">
+    <div class="adm-stat-icon is-purple"><i class="bi bi-phone-fill"></i></div>
+    <div class="adm-stat-body">
+      <p class="adm-stat-value">{{ gcash_orders }}</p>
+      <p class="adm-stat-label">GCash Orders</p>
+    </div>
+  </div>
+  <div class="adm-stat-card is-yellow">
+    <div class="adm-stat-icon is-yellow"><i class="bi bi-box-seam-fill"></i></div>
+    <div class="adm-stat-body">
+      <p class="adm-stat-value">{{ total_products }}</p>
+      <p class="adm-stat-label">Total Products</p>
+    </div>
+  </div>
+  <div class="adm-stat-card is-blue">
+    <div class="adm-stat-icon is-blue"><i class="bi bi-people-fill"></i></div>
+    <div class="adm-stat-body">
+      <p class="adm-stat-value">{{ total_customers }}</p>
+      <p class="adm-stat-label">Total Customers</p>
+    </div>
+  </div>
 </div>
-{% endif %}
 
-<div class="admin-layout">
-  {% include 'admin_panel/_sidebar.html' with active='dashboard' %}
+<!-- ── Quick Actions ── -->
+<div class="adm-card mb-4">
+  <div class="adm-card-body">
+    <div class="adm-card-title">Quick Actions</div>
+    <div class="adm-action-grid">
+      <a href="{% url 'admin_product_add' %}" class="adm-action-btn">
+        <span class="adm-action-icon"><i class="bi bi-box-seam-fill"></i></span>Add Product
+      </a>
+      <a href="{% url 'admin_category_add' %}" class="adm-action-btn">
+        <span class="adm-action-icon"><i class="bi bi-tags-fill"></i></span>Add Category
+      </a>
+      <a href="{% url 'admin_orders' %}" class="adm-action-btn">
+        <span class="adm-action-icon"><i class="bi bi-bag-check-fill"></i></span>View Orders
+      </a>
+      <a href="{% url 'admin_reports' %}" class="adm-action-btn">
+        <span class="adm-action-icon"><i class="bi bi-bar-chart-fill"></i></span>Reports
+      </a>
+      <a href="{% url 'admin_gcash_settings' %}" class="adm-action-btn">
+        <span class="adm-action-icon"><i class="bi bi-phone-fill"></i></span>GCash Settings
+      </a>
+    </div>
+  </div>
+</div>
 
-  <main class="admin-content">
-    <header class="admin-topbar">
-      <h4 class="mb-0">Dashboard</h4>
-      <span class="text-muted">Welcome, {{ user.first_name|default:user.username }}</span>
-    </header>
-
-    <div class="p-4">
-      <div class="row g-3 mb-4">
-        <div class="col-6 col-md-3">
-          <div class="card-yd p-3 stat-card stat-yellow">
-            <i class="bi bi-box-seam"></i>
-            <h3>{{ total_products }}</h3>
-            <p>Total Products</p>
-          </div>
+<!-- ── Chart + Low Stock ── -->
+<div class="row g-4 mb-4">
+  <div class="col-lg-7">
+    <div class="adm-card h-100">
+      <div class="adm-card-body">
+        <div class="adm-card-title">
+          Revenue — Last 7 Days
+          <span class="adm-card-subtitle">paid orders only</span>
         </div>
-        <div class="col-6 col-md-3">
-          <div class="card-yd p-3 stat-card stat-green">
-            <i class="bi bi-currency-exchange"></i>
-            <h3>&#8369;{{ total_revenue }}</h3>
-            <p>Total Sales</p>
-          </div>
-        </div>
-        <div class="col-6 col-md-3">
-          <div class="card-yd p-3 stat-card stat-yellow">
-            <i class="bi bi-hourglass-split"></i>
-            <h3>{{ pending_verification }}</h3>
-            <p>Pending Verification</p>
-          </div>
-        </div>
-        <div class="col-6 col-md-3">
-          <div class="card-yd p-3 stat-card stat-green">
-            <i class="bi bi-check-circle"></i>
-            <h3>{{ paid_orders }}</h3>
-            <p>Paid Orders</p>
-          </div>
-        </div>
-        <div class="col-6 col-md-3">
-          <div class="card-yd p-3 stat-card stat-yellow">
-            <i class="bi bi-cash-coin"></i>
-            <h3>{{ cod_orders }}</h3>
-            <p>COD Orders</p>
-          </div>
-        </div>
-        <div class="col-6 col-md-3">
-          <div class="card-yd p-3 stat-card stat-green">
-            <i class="bi bi-phone"></i>
-            <h3>{{ gcash_orders }}</h3>
-            <p>GCash Orders</p>
-          </div>
-        </div>
-        <div class="col-6 col-md-3">
-          <div class="card-yd p-3 stat-card stat-yellow">
-            <i class="bi bi-exclamation-triangle"></i>
-            <h3>{{ unpaid_orders }}</h3>
-            <p>Unpaid Orders</p>
-          </div>
-        </div>
-        <div class="col-6 col-md-3">
-          <div class="card-yd p-3 stat-card stat-green">
-            <i class="bi bi-people"></i>
-            <h3>{{ total_customers }}</h3>
-            <p>Customers</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="row g-4">
-        <div class="col-lg-7">
-          <div class="card border-0 shadow-sm">
-            <div class="card-body">
-              <h5 class="mb-3">Recent Orders</h5>
-              {% if recent_orders %}
-                <div class="table-responsive">
-                  <table class="table table-sm align-middle mb-0">
-                    <thead><tr><th>Order #</th><th>Customer</th><th>Total</th><th>Status</th><th></th></tr></thead>
-                    <tbody>
-                      {% for order in recent_orders %}
-                      <tr>
-                        <td>{{ order.order_number }}</td>
-                        <td>{{ order.customer.username }}</td>
-                        <td>&#8369;{{ order.grand_total }}</td>
-                        <td><span class="badge badge-status-{{ order.status }}">{{ order.get_status_display }}</span></td>
-                        <td><a href="{% url 'admin_order_detail' order.pk %}" class="btn btn-sm btn-outline-success">View</a></td>
-                      </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
-                </div>
-              {% else %}
-                <p class="text-muted mb-0">No orders yet.</p>
-              {% endif %}
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-5">
-          <div class="card border-0 shadow-sm">
-            <div class="card-body">
-              <h5 class="mb-3"><i class="bi bi-exclamation-circle text-warning me-1"></i>Low Stock Products</h5>
-              {% if low_stock %}
-                <ul class="list-unstyled mb-0">
-                  {% for p in low_stock %}
-                    <li class="d-flex justify-content-between border-bottom py-2 small">
-                      <span>{{ p.name }}</span>
-                      <span class="fw-bold text-danger">{{ p.stock }} left</span>
-                    </li>
-                  {% endfor %}
-                </ul>
-              {% else %}
-                <p class="text-muted mb-0">All products are well stocked.</p>
-              {% endif %}
-            </div>
-          </div>
-        </div>
+        <canvas id="revenueChart" height="140"></canvas>
       </div>
     </div>
-  </main>
+  </div>
+  <div class="col-lg-5">
+    <div class="adm-card h-100">
+      <div class="adm-card-body">
+        <div class="adm-card-title">
+          <span><i class="bi bi-exclamation-circle me-2" style="color:#F59E0B;"></i>Low Stock</span>
+        </div>
+        {% if low_stock %}
+          <ul class="list-unstyled mb-0">
+            {% for p in low_stock %}
+              <li class="d-flex justify-content-between align-items-center py-2" style="border-bottom:1px solid var(--adm-border-light);">
+                <span style="font-size:0.855rem;">{{ p.name }}</span>
+                <span class="adm-pill adm-pill-red">{{ p.stock }} left</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="adm-empty" style="padding:2rem 1rem;">
+            <div class="adm-empty-icon"><i class="bi bi-check2-circle"></i></div>
+            <p class="mb-0">All products are well stocked.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
 </div>
-{% endblock full_page %}
+
+<!-- ── Recent Orders ── -->
+<div class="adm-card-title mb-2">Recent Orders</div>
+{% if recent_orders %}
+  <div class="adm-table-wrap">
+    <div class="table-responsive">
+      <table class="adm-table">
+        <thead>
+          <tr><th>Order #</th><th>Customer</th><th>Total</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for order in recent_orders %}
+          <tr>
+            <td class="fw-semibold">{{ order.order_number }}</td>
+            <td>{{ order.customer.username }}</td>
+            <td>&#8369;{{ order.grand_total }}</td>
+            <td><span class="badge-status-{{ order.status }}">{{ order.get_status_display }}</span></td>
+            <td>
+              <a href="{% url 'admin_order_detail' order.pk %}" class="adm-btn adm-btn-ghost adm-btn-sm">
+                View <i class="bi bi-arrow-right ms-1"></i>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% else %}
+  <div class="adm-card">
+    <div class="adm-empty">
+      <div class="adm-empty-icon"><i class="bi bi-inbox"></i></div>
+      <h4>No orders yet</h4>
+      <p>New orders will appear here.</p>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+
+  const ctx = document.getElementById('revenueChart');
+  if (ctx) {
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: {{ chart_labels|safe }},
+        datasets: [{
+          label: 'Revenue (₱)',
+          data: {{ chart_values|safe }},
+          borderColor: '#2E7D32',
+          backgroundColor: 'rgba(46,125,50,0.08)',
+          tension: 0.4,
+          fill: true,
+          pointBackgroundColor: '#F5C518',
+          pointBorderColor: '#2E7D32',
+          pointRadius: 5,
+          pointHoverRadius: 7,
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, grid: { color: '#EEF2F7' }, ticks: { font: { family: 'Plus Jakarta Sans' } } },
+          x: { grid: { display: false }, ticks: { font: { family: 'Plus Jakarta Sans' } } }
+        }
+      }
+    });
+  }
+</script>
+{% endblock %}

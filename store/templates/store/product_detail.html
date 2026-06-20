@@ -1,0 +1,112 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}{{ product.name }} - The Yellow Diaries{% endblock %}
+
+{% block content %}
+<div class="container py-4 py-lg-5">
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'menu' %}">Menu</a></li>
+      <li class="breadcrumb-item active">{{ product.name }}</li>
+    </ol>
+  </nav>
+
+  <div class="row g-4 g-lg-5 align-items-start">
+    <div class="col-lg-6">
+      <div class="card-yd bg-white p-3 position-relative">
+        {% if product.image %}
+          <img src="{{ product.image.url }}" class="img-fluid rounded-4 w-100" alt="{{ product.name }}" style="max-height:520px;object-fit:cover;">
+        {% else %}
+          <div class="image-placeholder" style="min-height:420px;">🥤</div>
+        {% endif %}
+        <span class="food-badge position-absolute top-0 start-0 m-4">Fresh Pick</span>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="dashboard-card p-4 p-md-5">
+        {% if product.category %}<span class="kicker-pill"><i class="bi bi-tag"></i>{{ product.category.name }}</span>{% endif %}
+        <h1 class="display-5 fw-bold mt-3 mb-2">{{ product.name }}</h1>
+        <p class="text-muted">{{ product.description|default:'A fresh item from The Yellow Diaries kiosk menu.' }}</p>
+
+        <div class="d-flex flex-wrap align-items-center gap-3 my-4">
+          <span class="price-badge fs-4">₱{{ product.price }}</span>
+          {% if product.in_stock %}
+            <span class="badge bg-success-subtle text-success rounded-pill px-3 py-2">In Stock • {{ product.stock }} available</span>
+          {% else %}
+            <span class="badge bg-secondary rounded-pill px-3 py-2">Out of Stock</span>
+          {% endif %}
+        </div>
+
+        {% if product.in_stock %}
+        <form method="post" action="{% url 'cart_add' product.id %}" class="mb-4">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{% url 'product_detail' product.slug %}">
+          <div class="row g-3 align-items-end">
+            <div class="col-sm-4">
+              <label for="quantity" class="form-label fw-semibold">Quantity</label>
+              <input type="number" id="quantity" name="quantity" value="1" min="1" max="{{ product.stock }}" class="form-control">
+            </div>
+            <div class="col-sm-8">
+              <label for="size" class="form-label fw-semibold">Size</label>
+              <select id="size" name="size" class="form-select">
+                {% for size in product.available_sizes %}
+                  <option value="{{ size.size }}">{{ size.get_size_display }}</option>
+                {% empty %}
+                  <option value="">Regular</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-yd-green btn-lg w-100 mt-4">
+            <i class="bi bi-cart-plus me-2"></i>Add to Cart
+          </button>
+        </form>
+        {% else %}
+          <button class="btn btn-secondary btn-lg w-100 mb-4" disabled>Out of Stock</button>
+        {% endif %}
+
+        <div class="row g-3 text-center">
+          <div class="col-4"><div class="rounded-4 p-3" style="background:var(--yd-cream);"><i class="bi bi-lightning-charge text-warning"></i><br><small>Fast</small></div></div>
+          <div class="col-4"><div class="rounded-4 p-3" style="background:var(--yd-cream);"><i class="bi bi-wallet2 text-success"></i><br><small>GCash/COD</small></div></div>
+          <div class="col-4"><div class="rounded-4 p-3" style="background:var(--yd-cream);"><i class="bi bi-bicycle text-success"></i><br><small>Delivery</small></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if related %}
+  <section class="mt-5 pt-4">
+    <div class="d-flex justify-content-between align-items-end mb-3">
+      <div>
+        <span class="kicker-pill"><i class="bi bi-heart"></i> Related</span>
+        <h3 class="fw-bold mt-2 mb-0">You might also like</h3>
+      </div>
+      <a href="{% url 'menu' %}" class="btn btn-outline-success rounded-pill">Full Menu</a>
+    </div>
+    <div class="row row-cols-2 row-cols-md-4 g-3">
+      {% for item in related %}
+      <div class="col">
+        <div class="card product-card card-yd h-100">
+          {% if item.image %}
+            <img src="{{ item.image.url }}" class="card-img-top" alt="{{ item.name }}" style="height:140px;object-fit:cover;">
+          {% else %}
+            <div class="image-placeholder" style="min-height:140px;font-size:2.5rem;">🥤</div>
+          {% endif %}
+          <div class="card-body py-3">
+            <h6 class="fw-bold mb-1">{{ item.name }}</h6>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="fw-bold text-success">₱{{ item.price }}</span>
+              <a href="{% url 'product_detail' item.slug %}" class="btn btn-sm btn-outline-success rounded-pill">View</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

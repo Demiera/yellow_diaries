@@ -1,45 +1,78 @@
 {% load static %}
-<aside class="admin-sidebar">
+<div class="admin-sidebar-backdrop" id="sidebarBackdrop"></div>
+<aside class="admin-sidebar" id="adminSidebar">
   <div class="admin-sidebar-brand">
-    <a href="{% url 'admin_dashboard' %}">The Yellow <span>Diaries</span></a>
-    <small>Admin Panel</small>
-  </div>
-  <nav class="admin-sidebar-nav">
-    <a href="{% url 'admin_dashboard' %}" class="{% if active == 'dashboard' %}active{% endif %}">
-      <i class="bi bi-speedometer2"></i>Dashboard
+    <div class="admin-sidebar-brand-icon"><i class="bi bi-cup-straw"></i></div>
+    <a href="{% url 'admin_dashboard' %}">The Yellow <span>Diaries</span>
+      <small>Admin Panel</small>
     </a>
+  </div>
+
+  <nav class="admin-sidebar-nav">
+    <span class="admin-sidebar-section-label">Overview</span>
+    <a href="{% url 'admin_dashboard' %}" class="{% if active == 'dashboard' %}active{% endif %}">
+      <i class="bi bi-grid-1x2-fill"></i>Dashboard
+    </a>
+
+    <span class="admin-sidebar-section-label">Catalog</span>
     <a href="{% url 'admin_categories' %}" class="{% if active == 'categories' %}active{% endif %}">
-      <i class="bi bi-tags"></i>Categories
+      <i class="bi bi-tags-fill"></i>Categories
     </a>
     <a href="{% url 'admin_products' %}" class="{% if active == 'products' %}active{% endif %}">
-      <i class="bi bi-box-seam"></i>Products
+      <i class="bi bi-box-seam-fill"></i>Products
     </a>
+
+    <span class="admin-sidebar-section-label">Sales</span>
     <a href="{% url 'admin_orders' %}" class="{% if active == 'orders' %}active{% endif %}">
-      <i class="bi bi-bag-check"></i>Orders
+      <i class="bi bi-bag-check-fill"></i>Orders
     </a>
-    <hr>
+    <a href="{% url 'admin_reports' %}" class="{% if active == 'reports' %}active{% endif %}">
+      <i class="bi bi-graph-up-arrow"></i>Reports
+    </a>
+
+    <span class="admin-sidebar-section-label">People</span>
     <a href="{% url 'admin_riders' %}" class="{% if active == 'riders' %}active{% endif %}">
       <i class="bi bi-bicycle"></i>Riders
     </a>
     <a href="{% url 'admin_users' %}" class="{% if active == 'users' %}active{% endif %}">
-      <i class="bi bi-people"></i>Customers
+      <i class="bi bi-people-fill"></i>Customers
     </a>
-    <hr>
-    <a href="{% url 'admin_reports' %}" class="{% if active == 'reports' %}active{% endif %}">
-      <i class="bi bi-graph-up"></i>Reports
-    </a>
+
+    <span class="admin-sidebar-section-label">Settings</span>
     <a href="{% url 'admin_gcash_settings' %}" class="{% if active == 'gcash' %}active{% endif %}">
-      <i class="bi bi-phone"></i>GCash Settings
+      <i class="bi bi-phone-fill"></i>GCash Settings
     </a>
-    <hr>
     <a href="{% url 'home' %}">
       <i class="bi bi-shop"></i>View Store
     </a>
   </nav>
-  <form method="post" action="{% url 'logout' %}" class="p-2">
-    {% csrf_token %}
-    <button type="submit" class="admin-sidebar-logout">
-      <i class="bi bi-box-arrow-right me-2"></i>Logout
-    </button>
-  </form>
+
+  <div class="admin-sidebar-footer">
+    <form method="post" action="{% url 'logout' %}">
+      {% csrf_token %}
+      <button type="submit" class="admin-sidebar-logout">
+        <i class="bi bi-box-arrow-right me-2"></i>Logout
+      </button>
+    </form>
+  </div>
 </aside>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var toggle = document.getElementById('sidebarToggleBtn');
+  var sidebar = document.getElementById('adminSidebar');
+  var backdrop = document.getElementById('sidebarBackdrop');
+  if (!sidebar || !backdrop) return;
+  function closeSidebar() {
+    sidebar.classList.remove('show');
+    backdrop.classList.remove('show');
+  }
+  if (toggle) {
+    toggle.addEventListener('click', function () {
+      sidebar.classList.toggle('show');
+      backdrop.classList.toggle('show');
+    });
+  }
+  backdrop.addEventListener('click', closeSidebar);
+});
+</script>

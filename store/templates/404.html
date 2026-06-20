@@ -1,0 +1,46 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}Page Not Found - The Yellow Diaries{% endblock %}
+
+{% block full_page %}
+<div class="error-page">
+  <div class="error-code" aria-hidden="true">404</div>
+
+  <div class="error-card">
+    <div class="error-illustration">
+      <svg viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The Yellow Diaries lemonade mascot, looking confused next to a question mark">
+        <ellipse cx="110" cy="200" rx="70" ry="10" fill="#1A1A1A" opacity="0.06"/>
+        <!-- glass -->
+        <path d="M70 70 L80 185 Q110 198 140 185 L150 70 Z" fill="#FFF3B0" stroke="#D4A017" stroke-width="3"/>
+        <path d="M76 105 L144 105 L140 185 Q110 198 80 185 Z" fill="#F5C518"/>
+        <ellipse cx="110" cy="70" rx="40" ry="10" fill="#FFFDF4" stroke="#D4A017" stroke-width="3"/>
+        <!-- straw -->
+        <rect x="116" y="20" width="10" height="75" rx="4" fill="#2E7D32" transform="rotate(10 121 57)"/>
+        <!-- lemon slice -->
+        <circle cx="158" cy="62" r="18" fill="#FFF3B0" stroke="#D4A017" stroke-width="2.5"/>
+        <circle cx="158" cy="62" r="12" fill="#FBE98C"/>
+        <g stroke="#D4A017" stroke-width="1.5">
+          <line x1="158" y1="50" x2="158" y2="74"/>
+          <line x1="146" y1="62" x2="170" y2="62"/>
+          <line x1="150" y1="54" x2="166" y2="70"/>
+          <line x1="150" y1="70" x2="166" y2="54"/>
+        </g>
+        <!-- confused face on glass -->
+        <circle cx="98" cy="135" r="5" fill="#1A1A1A"/>
+        <circle cx="124" cy="135" r="5" fill="#1A1A1A"/>
+        <path d="M98 155 Q111 147 124 155" stroke="#1A1A1A" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <!-- question mark -->
+        <text x="40" y="60" font-family="'Playfair Display', serif" font-size="46" font-weight="800" fill="#2E7D32" opacity="0.85">?</text>
+      </svg>
+    </div>
+
+    <h1 class="error-message">Oops! we couldn't find the page you're looking for.</h1>
+    <p class="error-submessage">Please recheck your url or go to homepage.</p>
+
+    <a href="{% url 'home' %}" class="error-home-btn">
+      <i class="bi bi-house-door-fill me-2"></i>Go to Home
+    </a>
+  </div>
+</div>
+{% endblock full_page %}

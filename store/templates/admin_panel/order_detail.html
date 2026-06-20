@@ -1,173 +1,231 @@
-{% extends 'store/base.html' %}
+{% extends 'admin_panel/base_admin.html' %}
 {% load static %}
 
-{% block title %}Order #{{ order.order_number }} - The Yellow Diaries{% endblock %}
+{% block title %}Order #{{ order.order_number }} — Admin{% endblock %}
+{% block page_title %}Order #{{ order.order_number }}{% endblock %}
+{% block nav_orders %}active{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="mb-0" style="font-family:'Playfair Display',serif;">Order #{{ order.order_number }}</h1>
-    <span class="badge badge-status-{{ order.status }} fs-6">{{ order.get_status_display }}</span>
-  </div>
-
-  <div class="row g-4">
-    <div class="col-lg-7">
-
-      <!-- Tracking -->
-      <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body">
-          <h6 class="mb-3">Order Tracking</h6>
-          {% if order.status == 'cancelled' or order.status == 'failed' %}
-            <p class="text-danger mb-0">
-              <i class="bi bi-x-circle-fill me-2"></i>
-              {% if order.status == 'cancelled' %}This order was cancelled.{% else %}Delivery for this order failed.{% endif %}
-            </p>
-          {% else %}
-            <div class="timeline-step">
-              <div class="timeline-dot {% if order.status_progress >= 10 %}done{% else %}pending{% endif %}"><i class="bi bi-check"></i></div>
-              <span>Order Placed</span>
-            </div>
-            <div class="timeline-line {% if order.status_progress >= 25 %}done{% endif %}"></div>
-            <div class="timeline-step">
-              <div class="timeline-dot {% if order.status_progress >= 25 %}done{% else %}pending{% endif %}"><i class="bi bi-check"></i></div>
-              <span>Payment Verified</span>
-            </div>
-            <div class="timeline-line {% if order.status_progress >= 40 %}done{% endif %}"></div>
-            <div class="timeline-step">
-              <div class="timeline-dot {% if order.status_progress >= 40 %}done{% else %}pending{% endif %}"><i class="bi bi-check"></i></div>
-              <span>Preparing</span>
-            </div>
-            <div class="timeline-line {% if order.status_progress >= 55 %}done{% endif %}"></div>
-            <div class="timeline-step">
-              <div class="timeline-dot {% if order.status_progress >= 55 %}done{% else %}pending{% endif %}"><i class="bi bi-check"></i></div>
-              <span>Ready</span>
-            </div>
-            <div class="timeline-line {% if order.status_progress >= 65 %}done{% endif %}"></div>
-            <div class="timeline-step">
-              <div class="timeline-dot {% if order.status_progress >= 65 %}done{% else %}pending{% endif %}"><i class="bi bi-check"></i></div>
-              <span>Rider Assigned</span>
-            </div>
-            <div class="timeline-line {% if order.status_progress >= 80 %}done{% endif %}"></div>
-            <div class="timeline-step">
-              <div class="timeline-dot {% if order.status_progress >= 80 %}done{% else %}pending{% endif %}"><i class="bi bi-check"></i></div>
-              <span>Out for Delivery</span>
-            </div>
-            <div class="timeline-line {% if order.status_progress >= 100 %}done{% endif %}"></div>
-            <div class="timeline-step">
-              <div class="timeline-dot {% if order.status_progress >= 100 %}done{% else %}pending{% endif %}"><i class="bi bi-check"></i></div>
-              <span>Delivered</span>
-            </div>
-          {% endif %}
-        </div>
-      </div>
-
-      <!-- Items -->
-      <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body">
-          <h6 class="mb-3">Items Ordered</h6>
-          <table class="table table-sm mb-0">
-            <tbody>
-              {% for item in order.items.all %}
-              <tr>
-                <td>{{ item.quantity }}x {{ item.product_name }}</td>
-                <td class="text-end">&#8369;{{ item.subtotal }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-          <hr>
-          <div class="d-flex justify-content-between"><span>Subtotal</span><span>&#8369;{{ order.subtotal }}</span></div>
-          <div class="d-flex justify-content-between"><span>Delivery Fee</span><span>&#8369;{{ order.delivery_fee }}</span></div>
-          <div class="d-flex justify-content-between fw-bold fs-5"><span>Total</span><span>&#8369;{{ order.grand_total }}</span></div>
-        </div>
-      </div>
-
-      {% if order.notes %}
-      <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body">
-          <h6 class="mb-2">Order Notes</h6>
-          <p class="mb-0 text-muted small">{{ order.notes }}</p>
-        </div>
-      </div>
-      {% endif %}
-
-      {% if order.delivery_notes %}
-      <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body">
-          <h6 class="mb-2">Delivery Notes</h6>
-          <p class="mb-0 text-muted small">{{ order.delivery_notes }}</p>
-        </div>
-      </div>
-      {% endif %}
-    </div>
-
-    <div class="col-lg-5">
-      <!-- Delivery Address -->
-      <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body">
-          <h6 class="mb-3"><i class="bi bi-geo-alt me-2"></i>Delivery Address</h6>
-          {% if order.address %}
-            <p class="mb-1 fw-semibold">{{ order.address.full_name }}</p>
-            <p class="mb-1 small text-muted"><i class="bi bi-telephone me-1"></i>{{ order.address.contact_number }}</p>
-            <p class="mb-0 small text-muted">
-              {{ order.address.street }}, {{ order.address.barangay }}<br>
-              {{ order.address.city }}, {{ order.address.province }} {{ order.address.postal_code }}
-              {% if order.address.landmark %}<br><em>Landmark: {{ order.address.landmark }}</em>{% endif %}
-            </p>
-          {% else %}
-            <p class="text-muted mb-0">No address on file.</p>
-          {% endif %}
-        </div>
-      </div>
-
-      <!-- Payment -->
-      <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body">
-          <h6 class="mb-3"><i class="bi bi-wallet2 me-2"></i>Payment</h6>
-          <div class="d-flex justify-content-between mb-2">
-            <span>Method</span><span class="fw-semibold">{{ order.get_payment_method_display }}</span>
-          </div>
-          <div class="d-flex justify-content-between mb-2">
-            <span>Status</span>
-            <span class="badge bg-{% if order.payment_status == 'paid' %}success{% elif order.payment_status == 'rejected' %}danger{% else %}warning text-dark{% endif %}">
-              {{ order.get_payment_status_display }}
-            </span>
-          </div>
-          {% if order.payment_method == 'gcash' %}
-            {% if order.gcash_reference %}
-              <div class="d-flex justify-content-between mb-2">
-                <span>Reference #</span><span>{{ order.gcash_reference }}</span>
-              </div>
-            {% endif %}
-            {% if order.payment_proof %}
-              <img src="{{ order.payment_proof.url }}" class="img-fluid rounded border mt-2" style="max-height:220px;">
-            {% elif order.payment_status == 'unpaid' and order.customer == request.user %}
-              <a href="{% url 'gcash_payment' order.pk %}" class="btn btn-sm btn-yd-green w-100 mt-2">Upload Payment Proof</a>
-            {% endif %}
-            {% if order.payment_status == 'rejected' and order.rejection_reason %}
-              <p class="small text-danger mt-2 mb-0"><strong>Rejection reason:</strong> {{ order.rejection_reason }}</p>
-            {% endif %}
-          {% endif %}
-        </div>
-      </div>
-
-      <!-- Rider -->
-      {% if order.rider %}
-      <div class="card border-0 shadow-sm">
-        <div class="card-body">
-          <h6 class="mb-3"><i class="bi bi-bicycle me-2"></i>Delivery Rider</h6>
-          <p class="mb-1 fw-semibold">{{ order.rider.first_name|default:order.rider.username }}</p>
-          {% if order.delivered_at %}
-            <p class="mb-0 small text-muted">Delivered on {{ order.delivered_at|date:"M d, Y g:i A" }}</p>
-          {% endif %}
-        </div>
-      </div>
-      {% endif %}
-    </div>
-  </div>
-
-  <a href="{% url 'order_list' %}" class="btn btn-outline-secondary mt-2">
-    <i class="bi bi-arrow-left me-1"></i>Back to My Orders
+<!-- Back + status -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <a href="{% url 'admin_orders' %}" class="adm-btn adm-btn-ghost adm-btn-sm">
+    <i class="bi bi-arrow-left"></i> Back to Orders
   </a>
+  <div class="d-flex align-items-center gap-2">
+    <small style="color:var(--adm-text-muted);">{{ order.created_at|date:"M d, Y g:i A" }}</small>
+    <span class="badge-status-{{ order.status }}">{{ order.get_status_display }}</span>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- LEFT COLUMN -->
+  <div class="col-lg-7">
+
+    <!-- Tracking -->
+    <div class="adm-card mb-4">
+      <div class="adm-card-body">
+        <div class="adm-card-title">Order Tracking</div>
+        {% if order.status == 'cancelled' or order.status == 'failed' %}
+          <p class="mb-0" style="color:var(--c-red-text);">
+            <i class="bi bi-x-circle-fill me-2"></i>
+            {% if order.status == 'cancelled' %}This order was cancelled.{% else %}Delivery failed for this order.{% endif %}
+          </p>
+        {% else %}
+          <div class="adm-timeline">
+            {% with p=order.status_progress %}
+            <div class="adm-timeline-step {% if p >= 10 %}done{% elif p >= 5 %}current{% endif %}">
+              <div class="adm-timeline-dot"><i class="bi bi-check-lg"></i></div>
+              <div class="adm-timeline-content"><div class="adm-timeline-label">Order Placed</div></div>
+            </div>
+            <div class="adm-timeline-step {% if p >= 25 %}done{% elif p >= 15 %}current{% endif %}">
+              <div class="adm-timeline-dot"><i class="bi bi-check-lg"></i></div>
+              <div class="adm-timeline-content"><div class="adm-timeline-label">Payment Verified</div></div>
+            </div>
+            <div class="adm-timeline-step {% if p >= 40 %}done{% elif p >= 30 %}current{% endif %}">
+              <div class="adm-timeline-dot"><i class="bi bi-check-lg"></i></div>
+              <div class="adm-timeline-content"><div class="adm-timeline-label">Preparing</div></div>
+            </div>
+            <div class="adm-timeline-step {% if p >= 55 %}done{% elif p >= 45 %}current{% endif %}">
+              <div class="adm-timeline-dot"><i class="bi bi-check-lg"></i></div>
+              <div class="adm-timeline-content"><div class="adm-timeline-label">Ready</div></div>
+            </div>
+            <div class="adm-timeline-step {% if p >= 65 %}done{% elif p >= 58 %}current{% endif %}">
+              <div class="adm-timeline-dot"><i class="bi bi-check-lg"></i></div>
+              <div class="adm-timeline-content"><div class="adm-timeline-label">Rider Assigned</div></div>
+            </div>
+            <div class="adm-timeline-step {% if p >= 80 %}done{% elif p >= 70 %}current{% endif %}">
+              <div class="adm-timeline-dot"><i class="bi bi-check-lg"></i></div>
+              <div class="adm-timeline-content"><div class="adm-timeline-label">Out for Delivery</div></div>
+            </div>
+            <div class="adm-timeline-step {% if p >= 100 %}done{% elif p >= 85 %}current{% endif %}" style="padding-bottom:0;">
+              <div class="adm-timeline-dot"><i class="bi bi-check-lg"></i></div>
+              <div class="adm-timeline-content"><div class="adm-timeline-label">Delivered</div></div>
+            </div>
+            {% endwith %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Items -->
+    <div class="adm-card mb-4">
+      <div class="adm-card-body">
+        <div class="adm-card-title">Items Ordered</div>
+        {% for item in order.items.all %}
+        <div class="adm-summary-row">
+          <span>{{ item.quantity }}× {{ item.product_name }}</span>
+          <span class="fw-semibold">&#8369;{{ item.subtotal }}</span>
+        </div>
+        {% endfor %}
+        <div class="adm-summary-row" style="padding-top:12px;">
+          <span>Subtotal</span><span>&#8369;{{ order.subtotal }}</span>
+        </div>
+        <div class="adm-summary-row">
+          <span>Delivery Fee</span><span>&#8369;{{ order.delivery_fee }}</span>
+        </div>
+        <div class="adm-summary-row total">
+          <span>Total</span><span>&#8369;{{ order.grand_total }}</span>
+        </div>
+      </div>
+    </div>
+
+    {% if order.notes %}
+    <div class="adm-card mb-4">
+      <div class="adm-card-body">
+        <div class="adm-card-title"><i class="bi bi-chat-left-text me-2"></i>Order Notes</div>
+        <p class="mb-0" style="font-size:0.87rem;color:var(--adm-text-muted);">{{ order.notes }}</p>
+      </div>
+    </div>
+    {% endif %}
+    {% if order.delivery_notes %}
+    <div class="adm-card mb-4">
+      <div class="adm-card-body">
+        <div class="adm-card-title"><i class="bi bi-truck me-2"></i>Delivery Notes</div>
+        <p class="mb-0" style="font-size:0.87rem;color:var(--adm-text-muted);">{{ order.delivery_notes }}</p>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Update Status -->
+    <div class="adm-card">
+      <div class="adm-card-body">
+        <div class="adm-card-title">Update Order Status</div>
+        <form method="post" action="{% url 'admin_update_order_status' order.pk %}" class="d-flex flex-wrap gap-2">
+          {% csrf_token %}
+          <select name="status" class="form-select" style="max-width:260px;">
+            {% for val, label in order.STATUS_CHOICES %}
+              <option value="{{ val }}" {% if order.status == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="adm-btn adm-btn-primary"><i class="bi bi-check-lg"></i> Update Status</button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT COLUMN -->
+  <div class="col-lg-5">
+
+    <!-- Customer -->
+    <div class="adm-card mb-4">
+      <div class="adm-card-body">
+        <div class="adm-card-title"><i class="bi bi-person-fill me-2"></i>Customer</div>
+        <p class="fw-semibold mb-1">{{ order.customer.first_name|default:order.customer.username }} {{ order.customer.last_name }}</p>
+        <p class="mb-0" style="font-size:0.83rem;color:var(--adm-text-muted);">{{ order.customer.email|default:"—" }}</p>
+      </div>
+    </div>
+
+    <!-- Delivery Address -->
+    <div class="adm-card mb-4">
+      <div class="adm-card-body">
+        <div class="adm-card-title"><i class="bi bi-geo-alt-fill me-2"></i>Delivery Address</div>
+        {% if order.address %}
+          <p class="fw-semibold mb-1">{{ order.address.full_name }}</p>
+          <p class="mb-1" style="font-size:0.83rem;color:var(--adm-text-muted);"><i class="bi bi-telephone me-1"></i>{{ order.address.contact_number }}</p>
+          <p class="mb-0" style="font-size:0.83rem;color:var(--adm-text-muted);">
+            {{ order.address.street }}, {{ order.address.barangay }}<br>
+            {{ order.address.city }}, {{ order.address.province }} {{ order.address.postal_code }}
+            {% if order.address.landmark %}<br><em>Landmark: {{ order.address.landmark }}</em>{% endif %}
+          </p>
+        {% else %}
+          <p class="mb-0" style="color:var(--adm-text-muted);">No address on file.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Payment -->
+    <div class="adm-card mb-4">
+      <div class="adm-card-body">
+        <div class="adm-card-title"><i class="bi bi-wallet2 me-2"></i>Payment</div>
+        <div class="adm-info-row">
+          <span class="adm-info-label">Method</span>
+          <span class="adm-info-value">{{ order.get_payment_method_display }}</span>
+        </div>
+        <div class="adm-info-row">
+          <span class="adm-info-label">Status</span>
+          <span class="adm-pill {% if order.payment_status == 'paid' %}adm-pill-green{% elif order.payment_status == 'rejected' %}adm-pill-red{% else %}adm-pill-yellow{% endif %}">
+            {{ order.get_payment_status_display }}
+          </span>
+        </div>
+        {% if order.payment_method == 'gcash' %}
+          {% if order.gcash_reference %}
+          <div class="adm-info-row">
+            <span class="adm-info-label">Reference #</span>
+            <span class="adm-info-value">{{ order.gcash_reference }}</span>
+          </div>
+          {% endif %}
+          {% if order.payment_proof %}
+            <div class="mt-3">
+              <a href="{{ order.payment_proof.url }}" target="_blank">
+                <img src="{{ order.payment_proof.url }}" class="img-fluid rounded" style="max-height:200px;border:1px solid var(--adm-border);">
+              </a>
+            </div>
+          {% endif %}
+          {% if order.payment_status == 'rejected' and order.rejection_reason %}
+            <p class="mt-2 mb-0" style="font-size:0.83rem;color:var(--c-red-text);"><strong>Rejection:</strong> {{ order.rejection_reason }}</p>
+          {% endif %}
+          {% if order.payment_status == 'pending_verification' %}
+            <hr>
+            <p class="fw-bold mb-2" style="font-size:0.85rem;">Verify Payment</p>
+            <form method="post" action="{% url 'admin_verify_payment' order.pk %}">
+              {% csrf_token %}
+              <div class="mb-2">{{ verify_form.payment_status }}</div>
+              <div class="mb-3">
+                {{ verify_form.rejection_reason }}
+                <p class="adm-hint">Only needed if rejecting.</p>
+              </div>
+              <button type="submit" class="adm-btn adm-btn-primary w-100 justify-content-center">Submit Verification</button>
+            </form>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Rider -->
+    <div class="adm-card">
+      <div class="adm-card-body">
+        <div class="adm-card-title"><i class="bi bi-bicycle me-2"></i>Delivery Rider</div>
+        {% if order.rider %}
+          <p class="fw-semibold mb-1">{{ order.rider.first_name|default:order.rider.username }}</p>
+          {% if order.delivered_at %}
+            <p class="mb-2" style="font-size:0.83rem;color:var(--adm-text-muted);">Delivered on {{ order.delivered_at|date:"M d, Y g:i A" }}</p>
+          {% endif %}
+        {% else %}
+          <p class="mb-2" style="font-size:0.83rem;color:var(--adm-text-muted);">No rider assigned yet.</p>
+        {% endif %}
+        {% if order.status != 'delivered' and order.status != 'cancelled' and order.status != 'failed' %}
+          <form method="post" action="{% url 'admin_assign_rider' order.pk %}" class="mt-2">
+            {% csrf_token %}
+            <div class="mb-2">{{ assign_form.rider }}</div>
+            <button type="submit" class="adm-btn adm-btn-primary w-100 justify-content-center">
+              {% if order.rider %}Reassign Rider{% else %}Assign Rider{% endif %}
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
 </div>
 {% endblock %}

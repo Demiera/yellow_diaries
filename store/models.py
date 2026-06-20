@@ -88,7 +88,6 @@ class Product(models.Model):
         ('M', 'Medium'),
         ('L', 'Large'),
         ('XL', 'Extra Large'),
-        ('N/A', 'N/A'),
     ]
     STATUS_CHOICES = [
         ('active', 'Active'),
@@ -102,7 +101,6 @@ class Product(models.Model):
     description = models.TextField(blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     image = models.ImageField(upload_to='products/', blank=True, null=True)
-    size = models.CharField(max_length=5, choices=SIZE_CHOICES, default='N/A')
     stock = models.PositiveIntegerField(default=0)
     is_available = models.BooleanField(default=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
@@ -113,11 +111,66 @@ class Product(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.name} ({self.size})"
+        return self.name
 
     @property
     def in_stock(self):
         return self.stock > 0 and self.is_available and self.status == 'active'
+
+    @property
+    def available_sizes(self):
+        return self.sizes.filter(is_available=True)
+
+    @classmethod
+    def generate_sku(cls, category=None):
+        """Generate a unique SKU like 'YD-COF-0001'.
+
+        Uses the first 3 letters of the category name as a prefix when
+        available, otherwise falls back to 'GEN'. The numeric part keeps
+        incrementing until a free SKU is found, so it stays unique even
+        if SKUs were edited or deleted out of order.
+        """
+        import re
+        prefix = 'GEN'
+        if category and getattr(category, 'name', None):
+            letters = re.sub(r'[^A-Za-z]', '', category.name)
+            if letters:
+                prefix = letters[:3].upper()
+
+        existing = cls.objects.filter(sku__startswith=f'{prefix}-').values_list('sku', flat=True)
+        max_num = 0
+        for sku in existing:
+            match = re.search(r'(\d+)$', sku)
+            if match:
+                max_num = max(max_num, int(match.group(1)))
+
+        next_num = max_num + 1
+        sku = f'{prefix}-{next_num:04d}'
+        while cls.objects.filter(sku=sku).exists():
+            next_num += 1
+            sku = f'{prefix}-{next_num:04d}'
+        return sku
+
+
+class ProductSize(models.Model):
+    """One row per size option (S/M/L/XL) for a product.
+
+    Every product automatically gets all four sizes created the moment
+    it's added (see store/signals.py), all available by default. From
+    then on, admins only ever flip `is_available` on/off here — sizes
+    are never individually added or removed. Customers pick from
+    whichever sizes are currently available on the product detail page.
+    """
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='sizes')
+    size = models.CharField(max_length=5, choices=Product.SIZE_CHOICES)
+    is_available = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('product', 'size')
+        ordering = ['id']
+
+    def __str__(self):
+        return f"{self.product.name} - {self.get_size_display()}"
 
 
 # ─── CART ─────────────────────────────────────────────────────────────────────
@@ -142,10 +195,12 @@ class Cart(models.Model):
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    size = models.CharField(max_length=5, choices=Product.SIZE_CHOICES, blank=True)
     quantity = models.PositiveIntegerField(default=1)
 
     def __str__(self):
-        return f"{self.quantity}x {self.product.name}"
+        size_label = f" ({self.get_size_display()})" if self.size else ""
+        return f"{self.quantity}x {self.product.name}{size_label}"
 
     @property
     def subtotal(self):
@@ -236,10 +291,12 @@ class OrderItem(models.Model):
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
     product_name = models.CharField(max_length=200)  # Snapshot
     product_price = models.DecimalField(max_digits=10, decimal_places=2)  # Snapshot
+    size = models.CharField(max_length=5, choices=Product.SIZE_CHOICES, blank=True)  # Snapshot
     quantity = models.PositiveIntegerField()
 
     def __str__(self):
-        return f"{self.quantity}x {self.product_name}"
+        size_label = f" ({self.get_size_display()})" if self.size else ""
+        return f"{self.quantity}x {self.product_name}{size_label}"
 
     @property
     def subtotal(self):

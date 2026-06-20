@@ -4,72 +4,93 @@
 {% block title %}Menu - The Yellow Diaries{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-  <h1 class="mb-4" style="font-family:'Playfair Display',serif;">Menu</h1>
-
-  <form method="get" class="row g-2 mb-4">
-    {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category.slug }}">{% endif %}
-    <div class="col-md-6">
-      <input type="text" name="q" value="{{ search }}" class="form-control"
-             placeholder="Search drinks, snacks...">
-    </div>
-    <div class="col-md-3">
-      <button type="submit" class="btn btn-yd-green w-100">Search</button>
-    </div>
-  </form>
-
-  <div class="row">
-    <!-- Category sidebar -->
-    <div class="col-md-3 mb-4">
-      <div class="list-group">
-        <a href="{% url 'menu' %}{% if search %}?q={{ search }}{% endif %}"
-           class="list-group-item list-group-item-action {% if not selected_category %}active{% endif %}">
-          All Items
-        </a>
-        {% for cat in categories %}
-          <a href="?category={{ cat.slug }}{% if search %}&q={{ search }}{% endif %}"
-             class="list-group-item list-group-item-action {% if selected_category.id == cat.id %}active{% endif %}">
-            {{ cat.name }}
-          </a>
-        {% endfor %}
+<section class="py-5" style="background:linear-gradient(135deg,var(--yd-cream),#fff);">
+  <div class="container">
+    <span class="kicker-pill"><i class="bi bi-grid-3x3-gap"></i> Kiosk Menu</span>
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mt-3">
+      <div>
+        <h1 class="display-5 fw-bold mb-1">Choose your favorite</h1>
+        <p class="text-muted mb-0">Fresh drinks, snacks, and sweet treats ready for checkout.</p>
       </div>
-    </div>
-
-    <!-- Product grid -->
-    <div class="col-md-9">
-      {% if products %}
-        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4">
-          {% for product in products %}
-            <div class="col">
-              <div class="card h-100 shadow-sm border-0">
-                {% if product.image %}
-                  <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}"
-                       style="height:180px;object-fit:cover;">
-                {% else %}
-                  <div class="bg-light d-flex align-items-center justify-content-center" style="height:180px;">
-                    <i class="bi bi-cup-straw fs-1 text-muted"></i>
-                  </div>
-                {% endif %}
-                <div class="card-body d-flex flex-column">
-                  <h5 class="card-title">{{ product.name }}</h5>
-                  <p class="card-text text-muted small flex-grow-1">{{ product.description|truncatewords:15 }}</p>
-                  <div class="d-flex justify-content-between align-items-center">
-                    <span class="fw-bold fs-5">&#8369;{{ product.price }}</span>
-                    {% if product.in_stock %}
-                      <a href="{% url 'product_detail' product.slug %}" class="btn btn-sm btn-yd-green">View</a>
-                    {% else %}
-                      <span class="badge bg-secondary">Out of stock</span>
-                    {% endif %}
-                  </div>
-                </div>
-              </div>
-            </div>
-          {% endfor %}
-        </div>
-      {% else %}
-        <p class="text-muted">No menu items available{% if search %} for "{{ search }}"{% endif %}.</p>
-      {% endif %}
+      <form method="get" class="d-flex gap-2 flex-column flex-sm-row" style="max-width:520px;width:100%;">
+        {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category.slug }}">{% endif %}
+        <input type="search" name="q" value="{{ search }}" class="form-control" placeholder="Search drinks, snacks...">
+        <button type="submit" class="btn btn-yd-green px-4"><i class="bi bi-search me-1"></i>Search</button>
+      </form>
     </div>
   </div>
+</section>
+
+<div class="container py-4 py-lg-5">
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <a href="{% url 'menu' %}{% if search %}?q={{ search }}{% endif %}" class="category-pill {% if not selected_category %}active{% endif %}">
+      <i class="bi bi-stars"></i> All Items
+    </a>
+    {% for cat in categories %}
+      <a href="?category={{ cat.slug }}{% if search %}&q={{ search }}{% endif %}" class="category-pill {% if selected_category.id == cat.id %}active{% endif %}">
+        {{ cat.name }}
+      </a>
+    {% endfor %}
+  </div>
+
+  {% if products %}
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-4">
+    {% for product in products %}
+    <div class="col">
+      <div class="card product-card card-yd h-100">
+        <div class="position-relative">
+          {% if product.image %}
+            <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" style="height:190px;object-fit:cover;">
+          {% else %}
+            <div class="image-placeholder" style="min-height:190px;">🥤</div>
+          {% endif %}
+          <span class="price-badge position-absolute top-0 end-0 m-3">₱{{ product.price }}</span>
+        </div>
+        <div class="card-body d-flex flex-column">
+          <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+            {% if product.category %}<span class="badge-category">{{ product.category.name }}</span>{% endif %}
+            {% if product.in_stock %}<span class="badge bg-success-subtle text-success">{{ product.stock }} left</span>{% else %}<span class="badge bg-secondary">Out</span>{% endif %}
+          </div>
+          <h5 class="fw-bold mb-1">{{ product.name }}</h5>
+          <p class="text-muted small flex-grow-1">{{ product.description|truncatewords:14|default:'A fresh kiosk favorite.' }}</p>
+          {% if product.in_stock %}
+          <form method="post" action="{% url 'cart_add' product.id %}" class="mt-auto">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{% url 'menu' %}{% if selected_category %}?category={{ selected_category.slug }}{% elif search %}?q={{ search }}{% endif %}">
+            <div class="row g-2 mb-2">
+              <div class="col-5">
+                <input type="number" name="quantity" value="1" min="1" max="{{ product.stock }}" class="form-control form-control-sm" aria-label="Quantity">
+              </div>
+              <div class="col-7">
+                <select name="size" class="form-select form-select-sm" aria-label="Size">
+                  {% for size in product.available_sizes %}
+                    <option value="{{ size.size }}">{{ size.get_size_display }}</option>
+                  {% empty %}
+                    <option value="">Regular</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-yd-green flex-fill"><i class="bi bi-cart-plus me-1"></i>Add</button>
+              <a href="{% url 'product_detail' product.slug %}" class="btn btn-outline-success rounded-pill">View</a>
+            </div>
+          </form>
+          {% else %}
+            <a href="{% url 'product_detail' product.slug %}" class="btn btn-outline-secondary rounded-pill mt-auto">View Details</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="dashboard-card text-center p-5">
+    <div class="display-3 mb-2">🍽️</div>
+    <h4>No menu items found</h4>
+    <p class="text-muted">Try another search or category{% if search %} for “{{ search }}”{% endif %}.</p>
+    <a href="{% url 'menu' %}" class="btn btn-yd-green">Reset Menu</a>
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

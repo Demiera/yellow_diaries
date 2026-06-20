@@ -4,6 +4,7 @@ from .models import (
     Address,
     Category,
     Product,
+    ProductSize,
     Cart,
     CartItem,
     Order,
@@ -11,7 +12,6 @@ from .models import (
     Notification,
     GCashSettings,
 )
-
 
 # ---------------- CART INLINE ----------------
 
@@ -63,12 +63,21 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ("name", "category", "sku", "price", "size", "stock", "is_available", "status")
-    list_filter = ("category", "status", "is_available", "size")
+    list_display = ("name", "category", "sku", "price", "stock", "is_available", "status")
+    list_filter = ("category", "status", "is_available")
     search_fields = ("name", "sku", "description")
     prepopulated_fields = {
         "slug": ("name",)
     }
+
+
+# ---------------- PRODUCT SIZE ----------------
+
+@admin.register(ProductSize)
+class ProductSizeAdmin(admin.ModelAdmin):
+    list_display = ("product", "size", "is_available")
+    list_filter = ("size", "is_available")
+    search_fields = ("product__name",)
 
 
 # ---------------- CART ----------------

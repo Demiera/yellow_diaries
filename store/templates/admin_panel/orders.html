@@ -1,76 +1,63 @@
-{% extends 'store/base.html' %}
+{% extends 'admin_panel/base_admin.html' %}
 {% load static %}
 
-{% block title %}Orders - Admin{% endblock %}
+{% block title %}Orders — Admin{% endblock %}
+{% block page_title %}Orders{% endblock %}
+{% block nav_orders %}active{% endblock %}
 
-{% block full_page %}
-{% if messages %}
-<div class="messages-container">
-  {% for msg in messages %}
-  <div class="alert alert-yd alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show" role="alert">
-    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+{% block content %}
+<!-- Filter -->
+<div class="adm-filter-bar mb-4">
+  <form method="get" class="d-flex flex-wrap gap-2 align-items-center w-100">
+    <select name="status" class="form-select" style="max-width:210px;">
+      <option value="">All Order Statuses</option>
+      {% for val, label in status_choices %}
+        <option value="{{ val }}" {% if request.GET.status == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <select name="payment" class="form-select" style="max-width:210px;">
+      <option value="">All Payment Statuses</option>
+      {% for val, label in payment_choices %}
+        <option value="{{ val }}" {% if request.GET.payment == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="adm-filter-btn"><i class="bi bi-funnel-fill"></i> Filter</button>
+  </form>
+</div>
+
+<div class="adm-table-wrap">
+  <div class="table-responsive">
+    <table class="adm-table">
+      <thead>
+        <tr>
+          <th>Order #</th><th>Customer</th><th>Date</th><th>Total</th>
+          <th>Payment</th><th>Pay. Status</th><th>Order Status</th><th>Rider</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in orders %}
+        <tr>
+          <td class="fw-semibold">{{ order.order_number }}</td>
+          <td>{{ order.customer.username }}</td>
+          <td style="color:var(--adm-text-muted);font-size:0.8rem;">{{ order.created_at|date:"M d, Y" }}</td>
+          <td class="fw-semibold">&#8369;{{ order.grand_total }}</td>
+          <td>{{ order.get_payment_method_display }}</td>
+          <td>
+            <span class="adm-pill {% if order.payment_status == 'paid' %}adm-pill-green{% elif order.payment_status == 'rejected' %}adm-pill-red{% else %}adm-pill-yellow{% endif %}">
+              {{ order.get_payment_status_display }}
+            </span>
+          </td>
+          <td><span class="badge-status-{{ order.status }}">{{ order.get_status_display }}</span></td>
+          <td style="color:var(--adm-text-muted);font-size:0.83rem;">{{ order.rider.username|default:"—" }}</td>
+          <td>
+            <a href="{% url 'admin_order_detail' order.pk %}" class="adm-btn adm-btn-ghost adm-btn-sm">View</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="9" class="text-center py-5" style="color:var(--adm-text-muted);">No orders found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
-  {% endfor %}
 </div>
-{% endif %}
-<div class="admin-layout">
-  {% include 'admin_panel/_sidebar.html' with active='orders' %}
-  <main class="admin-content">
-    <header class="admin-topbar"><h4 class="mb-0">Orders</h4></header>
-    <div class="p-4">
-      <form method="get" class="row g-2 mb-3">
-        <div class="col-md-4">
-          <select name="status" class="form-select">
-            <option value="">All Order Statuses</option>
-            {% for val, label in status_choices %}
-              <option value="{{ val }}" {% if request.GET.status == val %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="col-md-4">
-          <select name="payment" class="form-select">
-            <option value="">All Payment Statuses</option>
-            {% for val, label in payment_choices %}
-              <option value="{{ val }}" {% if request.GET.payment == val %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="col-md-2">
-          <button type="submit" class="btn btn-yd-green w-100">Filter</button>
-        </div>
-      </form>
-
-      <div class="card border-0 shadow-sm">
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="table align-middle">
-              <thead><tr><th>Order #</th><th>Customer</th><th>Date</th><th>Total</th><th>Payment</th><th>Payment Status</th><th>Order Status</th><th>Rider</th><th></th></tr></thead>
-              <tbody>
-                {% for order in orders %}
-                <tr>
-                  <td>{{ order.order_number }}</td>
-                  <td>{{ order.customer.username }}</td>
-                  <td>{{ order.created_at|date:"M d, Y" }}</td>
-                  <td>&#8369;{{ order.grand_total }}</td>
-                  <td>{{ order.get_payment_method_display }}</td>
-                  <td>
-                    <span class="badge bg-{% if order.payment_status == 'paid' %}success{% elif order.payment_status == 'rejected' %}danger{% else %}warning text-dark{% endif %}">
-                      {{ order.get_payment_status_display }}
-                    </span>
-                  </td>
-                  <td><span class="badge badge-status-{{ order.status }}">{{ order.get_status_display }}</span></td>
-                  <td>{{ order.rider.username|default:"—" }}</td>
-                  <td><a href="{% url 'admin_order_detail' order.pk %}" class="btn btn-sm btn-outline-success">View</a></td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="9" class="text-center text-muted py-4">No orders found.</td></tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  </main>
-</div>
-{% endblock full_page %}
+{% endblock %}

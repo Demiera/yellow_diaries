@@ -1,99 +1,110 @@
-{% extends 'store/base.html' %}
+{% extends 'admin_panel/base_admin.html' %}
 {% load static %}
 
-{% block title %}Products - Admin{% endblock %}
+{% block title %}Products — Admin{% endblock %}
+{% block page_title %}Products{% endblock %}
+{% block nav_products %}active{% endblock %}
 
-{% block full_page %}
-{% if messages %}
-<div class="messages-container">
-  {% for msg in messages %}
-  <div class="alert alert-yd alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show" role="alert">
-    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+{% block topbar_action %}
+  <a href="{% url 'admin_product_add' %}" class="adm-topbar-cta">
+    <i class="bi bi-plus-lg"></i><span>Add Product</span>
+  </a>
+{% endblock %}
+
+{% block content %}
+<!-- Filter -->
+<div class="adm-card mb-4">
+  <div class="adm-card-body" style="padding:16px 22px;">
+    <form method="get" class="d-flex flex-wrap gap-2 align-items-center">
+      <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search by name or SKU…" style="max-width:240px;">
+      <select name="category" class="form-select" style="max-width:180px;">
+        <option value="">All Categories</option>
+        {% for cat in categories %}
+          <option value="{{ cat.id }}" {% if request.GET.category == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+        {% endfor %}
+      </select>
+      <select name="status" class="form-select" style="max-width:160px;">
+        <option value="">All Statuses</option>
+        <option value="active"   {% if request.GET.status == 'active'   %}selected{% endif %}>Active</option>
+        <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactive</option>
+      </select>
+      <button type="submit" class="adm-filter-btn"><i class="bi bi-funnel-fill"></i> Filter</button>
+    </form>
   </div>
-  {% endfor %}
 </div>
-{% endif %}
-<div class="admin-layout">
-  {% include 'admin_panel/_sidebar.html' with active='products' %}
-  <main class="admin-content">
-    <header class="admin-topbar">
-      <h4 class="mb-0">Products</h4>
-      <a href="{% url 'admin_product_add' %}" class="btn btn-yd-green btn-sm"><i class="bi bi-plus-lg me-1"></i>Add Product</a>
-    </header>
-    <div class="p-4">
-      <form method="get" class="row g-2 mb-3">
-        <div class="col-md-4">
-          <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search by name or SKU...">
-        </div>
-        <div class="col-md-3">
-          <select name="category" class="form-select">
-            <option value="">All Categories</option>
-            {% for cat in categories %}
-              <option value="{{ cat.id }}" {% if request.GET.category == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="col-md-3">
-          <select name="status" class="form-select">
-            <option value="">All Statuses</option>
-            <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
-            <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactive</option>
-          </select>
-        </div>
-        <div class="col-md-2">
-          <button type="submit" class="btn btn-yd-green w-100">Filter</button>
-        </div>
-      </form>
 
-      <div class="card border-0 shadow-sm">
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="table align-middle">
-              <thead><tr><th>Image</th><th>Name</th><th>SKU</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th></th></tr></thead>
-              <tbody>
-                {% for product in products %}
-                <tr>
-                  <td>
-                    {% if product.image %}<img src="{{ product.image.url }}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;">
-                    {% else %}<i class="bi bi-cup-straw text-muted fs-4"></i>{% endif %}
-                  </td>
-                  <td>{{ product.name }}</td>
-                  <td><code>{{ product.sku }}</code></td>
-                  <td>{{ product.category.name|default:"—" }}</td>
-                  <td>&#8369;{{ product.price }}</td>
-                  <td>{% if product.stock <= 5 %}<span class="text-danger fw-bold">{{ product.stock }}</span>{% else %}{{ product.stock }}{% endif %}</td>
-                  <td>
-                    {% if product.status == 'active' and product.is_available %}<span class="badge bg-success">Available</span>
-                    {% else %}<span class="badge bg-secondary">{{ product.get_status_display }}</span>{% endif %}
-                  </td>
-                  <td class="d-flex gap-1">
-                    <a href="{% url 'admin_product_edit' product.pk %}" class="btn btn-sm btn-outline-success">Edit</a>
-                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#delProd{{ product.pk }}">Delete</button>
-                  </td>
-                </tr>
-                <div class="modal fade" id="delProd{{ product.pk }}" tabindex="-1">
-                  <div class="modal-dialog">
-                    <div class="modal-content">
-                      <div class="modal-header"><h5 class="modal-title">Delete Product</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
-                      <div class="modal-body">Are you sure you want to delete <strong>{{ product.name }}</strong>? This cannot be undone.</div>
-                      <div class="modal-footer">
-                        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <form method="post" action="{% url 'admin_product_delete' product.pk %}">{% csrf_token %}
-                          <button type="submit" class="btn btn-danger">Confirm Delete</button>
-                        </form>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                {% empty %}
-                <tr><td colspan="8" class="text-center text-muted py-4">No products found.</td></tr>
-                {% endfor %}
-              </tbody>
-            </table>
+{% if products %}
+<div class="adm-table-wrap">
+  <div class="table-responsive">
+    <table class="adm-table">
+      <thead>
+        <tr><th>Image</th><th>Name</th><th>SKU</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for product in products %}
+        <tr>
+          <td>
+            {% if product.image %}
+              <img src="{{ product.image.url }}" class="adm-table-thumb">
+            {% else %}
+              <div style="width:42px;height:42px;border-radius:10px;background:var(--adm-bg);display:flex;align-items:center;justify-content:center;color:var(--adm-text-xmuted);">
+                <i class="bi bi-cup-straw"></i>
+              </div>
+            {% endif %}
+          </td>
+          <td class="fw-semibold">{{ product.name }}</td>
+          <td style="font-size:0.8rem;color:var(--adm-text-muted);font-family:monospace;">{{ product.sku|default:"—" }}</td>
+          <td style="font-size:0.83rem;">{{ product.category.name|default:"—" }}</td>
+          <td class="fw-semibold">&#8369;{{ product.price }}</td>
+          <td>
+            {% if product.stock <= 5 %}
+              <span class="adm-pill adm-pill-red">{{ product.stock }}</span>
+            {% else %}
+              {{ product.stock }}
+            {% endif %}
+          </td>
+          <td>
+            {% if product.status == 'active' %}
+              <span class="adm-pill adm-pill-green">Active</span>
+            {% else %}
+              <span class="adm-pill adm-pill-gray">Inactive</span>
+            {% endif %}
+          </td>
+          <td class="d-flex gap-1">
+            <a href="{% url 'admin_product_edit' product.pk %}" class="adm-btn adm-btn-ghost adm-btn-sm">Edit</a>
+            <button type="button" class="adm-btn adm-btn-danger adm-btn-sm" data-bs-toggle="modal" data-bs-target="#delProd{{ product.pk }}">Delete</button>
+          </td>
+        </tr>
+        <!-- Delete Modal -->
+        <div class="modal fade" id="delProd{{ product.pk }}" tabindex="-1">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header"><h5 class="modal-title">Delete Product</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+              <div class="modal-body">Are you sure you want to delete <strong>{{ product.name }}</strong>? This cannot be undone.</div>
+              <div class="modal-footer">
+                <button class="adm-btn adm-btn-ghost" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'admin_product_delete' product.pk %}">{% csrf_token %}
+                  <button type="submit" class="adm-btn adm-btn-danger">Confirm Delete</button>
+                </form>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-  </main>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
-{% endblock full_page %}
+{% else %}
+<div class="adm-card">
+  <div class="adm-empty">
+    <div class="adm-empty-icon"><i class="bi bi-box-seam"></i></div>
+    <h4>No products yet</h4>
+    <p>Add your first product to get started.</p>
+    <a href="{% url 'admin_product_add' %}" class="adm-btn adm-btn-primary mt-3">
+      <i class="bi bi-plus-lg"></i> Add Product
+    </a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,70 +1,81 @@
-{% extends 'store/base.html' %}
+{% extends 'admin_panel/base_admin.html' %}
 {% load static %}
 
-{% block title %}Categories - Admin{% endblock %}
+{% block title %}Categories — Admin{% endblock %}
+{% block page_title %}Categories{% endblock %}
+{% block nav_categories %}active{% endblock %}
 
-{% block full_page %}
-{% if messages %}
-<div class="messages-container">
-  {% for msg in messages %}
-  <div class="alert alert-yd alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show" role="alert">
-    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-  </div>
-  {% endfor %}
-</div>
-{% endif %}
-<div class="admin-layout">
-  {% include 'admin_panel/_sidebar.html' with active='categories' %}
-  <main class="admin-content">
-    <header class="admin-topbar">
-      <h4 class="mb-0">Categories</h4>
-      <a href="{% url 'admin_category_add' %}" class="btn btn-yd-green btn-sm"><i class="bi bi-plus-lg me-1"></i>Add Category</a>
-    </header>
-    <div class="p-4">
-      <div class="card border-0 shadow-sm">
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="table align-middle">
-              <thead><tr><th>Image</th><th>Name</th><th>Slug</th><th>Products</th><th>Active</th><th></th></tr></thead>
-              <tbody>
-                {% for cat in categories %}
-                <tr>
-                  <td>
-                    {% if cat.image %}<img src="{{ cat.image.url }}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;">
-                    {% else %}<i class="bi bi-image text-muted fs-4"></i>{% endif %}
-                  </td>
-                  <td>{{ cat.name }}</td>
-                  <td><code>{{ cat.slug }}</code></td>
-                  <td>{{ cat.product_count }}</td>
-                  <td>{% if cat.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}</td>
-                  <td class="d-flex gap-1">
-                    <a href="{% url 'admin_category_edit' cat.pk %}" class="btn btn-sm btn-outline-success">Edit</a>
-                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#delCat{{ cat.pk }}">Delete</button>
-                  </td>
-                </tr>
-                <div class="modal fade" id="delCat{{ cat.pk }}" tabindex="-1">
-                  <div class="modal-dialog">
-                    <div class="modal-content">
-                      <div class="modal-header"><h5 class="modal-title">Delete Category</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
-                      <div class="modal-body">Are you sure you want to delete <strong>{{ cat.name }}</strong>? This cannot be undone.</div>
-                      <div class="modal-footer">
-                        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <form method="post" action="{% url 'admin_category_delete' cat.pk %}">{% csrf_token %}
-                          <button type="submit" class="btn btn-danger">Confirm Delete</button>
-                        </form>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                {% empty %}
-                <tr><td colspan="6" class="text-center text-muted py-4">No categories yet.</td></tr>
-                {% endfor %}
-              </tbody>
-            </table>
+{% block topbar_action %}
+  <a href="{% url 'admin_category_add' %}" class="adm-topbar-cta">
+    <i class="bi bi-plus-lg"></i><span>Add Category</span>
+  </a>
+{% endblock %}
+
+{% block content %}
+{% if categories %}
+<div class="adm-table-wrap">
+  <div class="table-responsive">
+    <table class="adm-table">
+      <thead>
+        <tr><th>Image</th><th>Name</th><th>Slug</th><th>Products</th><th>Status</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for cat in categories %}
+        <tr>
+          <td>
+            {% if cat.image %}
+              <img src="{{ cat.image.url }}" class="adm-table-thumb">
+            {% else %}
+              <div style="width:42px;height:42px;border-radius:10px;background:var(--adm-bg);display:flex;align-items:center;justify-content:center;color:var(--adm-text-xmuted);">
+                <i class="bi bi-image"></i>
+              </div>
+            {% endif %}
+          </td>
+          <td class="fw-semibold">{{ cat.name }}</td>
+          <td><code style="background:var(--adm-bg);padding:2px 8px;border-radius:6px;font-size:0.78rem;">{{ cat.slug }}</code></td>
+          <td>{{ cat.product_count }}</td>
+          <td>
+            {% if cat.is_active %}
+              <span class="adm-pill adm-pill-green">Active</span>
+            {% else %}
+              <span class="adm-pill adm-pill-gray">Inactive</span>
+            {% endif %}
+          </td>
+          <td class="d-flex gap-1">
+            <a href="{% url 'admin_category_edit' cat.pk %}" class="adm-btn adm-btn-ghost adm-btn-sm">Edit</a>
+            <button type="button" class="adm-btn adm-btn-danger adm-btn-sm" data-bs-toggle="modal" data-bs-target="#delCat{{ cat.pk }}">Delete</button>
+          </td>
+        </tr>
+        <!-- Delete Modal -->
+        <div class="modal fade" id="delCat{{ cat.pk }}" tabindex="-1">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header"><h5 class="modal-title">Delete Category</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+              <div class="modal-body">Are you sure you want to delete <strong>{{ cat.name }}</strong>? This cannot be undone.</div>
+              <div class="modal-footer">
+                <button class="adm-btn adm-btn-ghost" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'admin_category_delete' cat.pk %}">{% csrf_token %}
+                  <button type="submit" class="adm-btn adm-btn-danger">Confirm Delete</button>
+                </form>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-  </main>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
-{% endblock full_page %}
+{% else %}
+<div class="adm-card">
+  <div class="adm-empty">
+    <div class="adm-empty-icon"><i class="bi bi-tags"></i></div>
+    <h4>No categories yet</h4>
+    <p>Add your first category to organize your menu.</p>
+    <a href="{% url 'admin_category_add' %}" class="adm-btn adm-btn-primary mt-3">
+      <i class="bi bi-plus-lg"></i> Add Category
+    </a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

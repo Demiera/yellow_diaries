@@ -1,0 +1,31 @@
+{% load static %}
+<header class="admin-topbar">
+  <button class="admin-sidebar-toggle" id="sidebarToggleBtn" type="button" aria-label="Toggle menu">
+    <i class="bi bi-list fs-5"></i>
+  </button>
+
+  <div class="admin-topbar-title">
+    <h1>{{ page_title }}</h1>
+    {% if page_subtitle %}<p>{{ page_subtitle }}</p>{% endif %}
+  </div>
+
+  <form method="get" action="{% url 'admin_products' %}" class="admin-topbar-search">
+    <i class="bi bi-search"></i>
+    <input type="text" name="q" placeholder="Search products…">
+  </form>
+
+  <div class="admin-topbar-actions">
+    {% if action_url_name %}
+      <a href="{% url action_url_name %}" class="btn-yd-green admin-topbar-cta">
+        <i class="bi {{ action_icon|default:'bi-plus-lg' }} me-1"></i><span>{{ action_label }}</span>
+      </a>
+    {% endif %}
+    <a href="{% url 'admin_orders' %}?payment=pending_verification" class="admin-icon-btn" title="GCash payments awaiting verification">
+      <i class="bi bi-bell-fill"></i>
+      {% if admin_pending_count %}<span class="admin-icon-btn-badge">{{ admin_pending_count }}</span>{% endif %}
+    </a>
+    <div class="admin-avatar" title="{{ request.user.get_full_name|default:request.user.username }}">
+      {{ request.user.username|first|upper }}
+    </div>
+  </div>
+</header>

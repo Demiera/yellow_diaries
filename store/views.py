@@ -10,7 +10,7 @@ from datetime import timedelta
 import json
 
 from .models import (
-    UserProfile, Address, Category, Product,
+    UserProfile, Address, Category, Product, ProductSize,
     Cart, CartItem, Order, OrderItem,
     Notification, GCashSettings
 )
@@ -55,7 +55,11 @@ def menu(request):
 def product_detail(request, slug):
     product = get_object_or_404(Product, slug=slug, status='active')
     related = Product.objects.filter(category=product.category, status='active').exclude(pk=product.pk)[:4]
-    return render(request, 'store/product_detail.html', {'product': product, 'related': related})
+    return render(request, 'store/product_detail.html', {
+        'product': product,
+        'sizes': product.sizes.all(),
+        'related': related,
+    })
 
 
 # ─── AUTH ─────────────────────────────────────────────────────────────────────
@@ -68,11 +72,12 @@ def merge_session_cart(request, user):
     if not session_cart:
         return
     cart, _ = Cart.objects.get_or_create(user=user)
-    for pid, data in session_cart.items():
-        product = Product.objects.filter(pk=pid, status='active').first()
+    for key, data in session_cart.items():
+        product = Product.objects.filter(pk=data.get('product_id'), status='active').first()
         if not product:
             continue
-        item, created = CartItem.objects.get_or_create(cart=cart, product=product)
+        size = data.get('size', '')
+        item, created = CartItem.objects.get_or_create(cart=cart, product=product, size=size)
         if created:
             item.quantity = data.get('quantity', 1)
         else:
@@ -111,6 +116,8 @@ def login_view(request):
 
 
 def redirect_by_role(user):
+    if user.is_superuser:
+        return redirect('admin_dashboard')
     if not hasattr(user, 'profile'):
         return redirect('home')
     role = user.profile.role
@@ -224,22 +231,37 @@ def cart_view(request):
         session_cart = request.session.get('cart', {})
         items = []
         total = 0
-        for pid, data in session_cart.items():
-            product = Product.objects.filter(pk=pid, status='active').first()
+        for key, data in session_cart.items():
+            product = Product.objects.filter(pk=data.get('product_id'), status='active').first()
             if product:
                 subtotal = product.price * data['quantity']
                 total += subtotal
-                items.append({'product': product, 'quantity': data['quantity'], 'subtotal': subtotal})
+                items.append({
+                    'id': key,
+                    'product': product,
+                    'size': data.get('size', ''),
+                    'quantity': data['quantity'],
+                    'subtotal': subtotal,
+                })
     return render(request, 'store/cart.html', {'items': items, 'total': total, 'delivery_fee': 50})
 
 
 def cart_add(request, product_id):
     product = get_object_or_404(Product, pk=product_id, status='active', is_available=True)
     quantity = int(request.POST.get('quantity', 1))
+    size = request.POST.get('size', '')
+
+    available_sizes = list(product.sizes.filter(is_available=True).values_list('size', flat=True))
+    if available_sizes:
+        if size not in available_sizes:
+            messages.error(request, 'Please choose an available size.')
+            return redirect('product_detail', slug=product.slug)
+    else:
+        size = ''  # no sizes configured for this product at all
 
     if request.user.is_authenticated:
         cart, _ = Cart.objects.get_or_create(user=request.user)
-        item, created = CartItem.objects.get_or_create(cart=cart, product=product)
+        item, created = CartItem.objects.get_or_create(cart=cart, product=product, size=size)
         if not created:
             item.quantity += quantity
         else:
@@ -247,11 +269,17 @@ def cart_add(request, product_id):
         item.save()
     else:
         cart = request.session.get('cart', {})
-        pid = str(product_id)
-        if pid in cart:
-            cart[pid]['quantity'] += quantity
+        key = f"{product_id}_{size}"
+        if key in cart:
+            cart[key]['quantity'] += quantity
         else:
-            cart[pid] = {'quantity': quantity, 'name': product.name, 'price': str(product.price)}
+            cart[key] = {
+                'product_id': product_id,
+                'size': size,
+                'quantity': quantity,
+                'name': product.name,
+                'price': str(product.price),
+            }
         request.session['cart'] = cart
         request.session.modified = True
 
@@ -269,6 +297,15 @@ def cart_update(request, item_id):
         else:
             item.quantity = quantity
             item.save()
+    else:
+        cart = request.session.get('cart', {})
+        if item_id in cart:
+            if quantity < 1:
+                cart.pop(item_id, None)
+            else:
+                cart[item_id]['quantity'] = quantity
+            request.session['cart'] = cart
+            request.session.modified = True
     return redirect('cart')
 
 
@@ -278,8 +315,9 @@ def cart_remove(request, item_id):
         item.delete()
     else:
         cart = request.session.get('cart', {})
-        cart.pop(str(item_id), None)
+        cart.pop(item_id, None)
         request.session['cart'] = cart
+        request.session.modified = True
     messages.success(request, 'Item removed from cart.')
     return redirect('cart')
 
@@ -321,6 +359,7 @@ def checkout(request):
                 product=item.product,
                 product_name=item.product.name,
                 product_price=item.product.price,
+                size=item.size,
                 quantity=item.quantity,
             )
             # Deduct stock
@@ -408,6 +447,17 @@ def admin_dashboard(request):
     recent_orders = Order.objects.select_related('customer').order_by('-created_at')[:10]
     low_stock = Product.objects.filter(stock__lte=5, status='active')
 
+    # Last 7 days revenue, for the dashboard chart (additive; doesn't affect anything else)
+    chart_labels = []
+    chart_values = []
+    for i in range(6, -1, -1):
+        day = today - timedelta(days=i)
+        day_total = Order.objects.filter(
+            payment_status='paid', created_at__date=day
+        ).aggregate(total=Sum('grand_total'))['total'] or 0
+        chart_labels.append(day.strftime('%a'))
+        chart_values.append(float(day_total))
+
     return render(request, 'admin_panel/dashboard.html', {
         'total_revenue': total_revenue,
         'paid_orders': paid_orders,
@@ -419,6 +469,8 @@ def admin_dashboard(request):
         'low_stock': low_stock,
         'total_products': Product.objects.count(),
         'total_customers': UserProfile.objects.filter(role='customer').count(),
+        'chart_labels': json.dumps(chart_labels),
+        'chart_values': json.dumps(chart_values),
     })
 
 
@@ -482,14 +534,42 @@ def admin_products(request):
     })
 
 
+def _save_product_size_availability(product, post_data):
+    """Sync each size's `is_available` flag from checkboxes named
+    'size_S', 'size_M', etc. A size is available only if its checkbox
+    was checked; sizes are never created/removed here, only toggled —
+    the four rows already exist (auto-created when the product was
+    made)."""
+    for code, _label in Product.SIZE_CHOICES:
+        ProductSize.objects.filter(product=product, size=code).update(
+            is_available=f'size_{code}' in post_data
+        )
+
+
 @admin_required
 def admin_product_add(request):
-    form = ProductForm(request.POST or None, request.FILES or None)
-    if request.method == 'POST' and form.is_valid():
-        form.save()
-        messages.success(request, 'Product created.')
-        return redirect('admin_products')
-    return render(request, 'admin_panel/product_form.html', {'form': form, 'title': 'Add Product'})
+    if request.method == 'POST':
+        form = ProductForm(request.POST, request.FILES)
+        if form.is_valid():
+            product = form.save(commit=False)
+            if not product.sku:
+                product.sku = Product.generate_sku(product.category)
+            product.save()  # signal auto-creates the 4 ProductSize rows here
+            _save_product_size_availability(product, request.POST)
+            messages.success(request, 'Product created.')
+            return redirect('admin_products')
+    else:
+        category = None
+        category_id = request.GET.get('category')
+        if category_id:
+            category = Category.objects.filter(pk=category_id).first()
+        form = ProductForm(initial={'sku': Product.generate_sku(category)})
+    return render(request, 'admin_panel/product_form.html', {
+        'form': form,
+        'title': 'Add Product',
+        'size_choices': Product.SIZE_CHOICES,
+        'available_size_codes': [code for code, _ in Product.SIZE_CHOICES],  # all on by default
+    })
 
 
 @admin_required
@@ -497,10 +577,19 @@ def admin_product_edit(request, pk):
     product = get_object_or_404(Product, pk=pk)
     form = ProductForm(request.POST or None, request.FILES or None, instance=product)
     if request.method == 'POST' and form.is_valid():
-        form.save()
+        product = form.save(commit=False)
+        if not product.sku:
+            product.sku = Product.generate_sku(product.category)
+        product.save()
+        _save_product_size_availability(product, request.POST)
         messages.success(request, 'Product updated.')
         return redirect('admin_products')
-    return render(request, 'admin_panel/product_form.html', {'form': form, 'title': 'Edit Product'})
+    return render(request, 'admin_panel/product_form.html', {
+        'form': form,
+        'title': 'Edit Product',
+        'size_choices': Product.SIZE_CHOICES,
+        'available_size_codes': list(product.sizes.filter(is_available=True).values_list('size', flat=True)),
+    })
 
 
 @admin_required
@@ -539,6 +628,7 @@ def admin_order_detail(request, pk):
         'order': order,
         'verify_form': verify_form,
         'assign_form': assign_form,
+        'page_title': f'Order #{order.order_number}',
     })
 
 
@@ -664,7 +754,16 @@ def admin_users(request):
 @admin_required
 def admin_riders(request):
     from django.contrib.auth.models import User
-    riders = User.objects.select_related('profile').filter(profile__role='rider')
+    riders = User.objects.select_related('profile').filter(profile__role='rider').annotate(
+        active_deliveries=Count(
+            'deliveries',
+            filter=Q(deliveries__status__in=['assigned', 'out_for_delivery']),
+        ),
+        completed_deliveries=Count(
+            'deliveries',
+            filter=Q(deliveries__status='delivered'),
+        ),
+    ).order_by('-profile__is_available', 'username')
     return render(request, 'admin_panel/riders.html', {'riders': riders})
 
 
@@ -748,3 +847,14 @@ def rider_cod_received(request, pk):
                           f'Your order #{order.order_number} has been delivered and COD payment collected.', order)
         messages.success(request, f'COD payment collected for order #{order.order_number}.')
     return redirect('rider_deliveries')
+
+
+# ─── ERROR PAGES ────────────────────────────────────────────────────────────────
+
+def custom_404_view(request, exception=None):
+    """Custom 404 page. Registered as handler404 in the project's main urls.py,
+    so this is shown for ANY unmatched URL when DEBUG=False. It is also wired
+    to a normal URL (see store/urls.py -> 'preview_404') so it can be previewed
+    while DEBUG=True, since Django's own technical 404 page otherwise takes
+    over in development."""
+    return render(request, '404.html', status=404)

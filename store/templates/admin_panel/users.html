@@ -1,56 +1,42 @@
-{% extends 'store/base.html' %}
+{% extends 'admin_panel/base_admin.html' %}
 {% load static %}
 
-{% block title %}Customers - Admin{% endblock %}
+{% block title %}Customers — Admin{% endblock %}
+{% block page_title %}Customers{% endblock %}
+{% block nav_users %}active{% endblock %}
 
-{% block full_page %}
-{% if messages %}
-<div class="messages-container">
-  {% for msg in messages %}
-  <div class="alert alert-yd alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show" role="alert">
-    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+{% block content %}
+<p class="mb-4" style="color:var(--adm-text-muted);font-size:0.855rem;">
+  Looking for delivery riders? They have their own <a href="{% url 'admin_riders' %}" style="color:var(--yd-green);font-weight:600;">Riders</a> page.
+</p>
+
+<div class="adm-table-wrap">
+  <div class="table-responsive">
+    <table class="adm-table">
+      <thead>
+        <tr><th>Username</th><th>Name</th><th>Email</th><th>Role</th><th>Phone</th><th>Joined</th></tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td class="fw-semibold">{{ u.username }}</td>
+          <td>{{ u.first_name }} {{ u.last_name }}</td>
+          <td style="font-size:0.83rem;">{{ u.email }}</td>
+          <td>
+            {% if u.profile %}
+              <span class="adm-pill {% if u.profile.role == 'admin' %}adm-pill-yellow{% elif u.profile.role == 'rider' %}adm-pill-blue{% else %}adm-pill-gray{% endif %}">
+                {{ u.profile.get_role_display }}
+              </span>
+            {% else %}—{% endif %}
+          </td>
+          <td style="font-size:0.83rem;color:var(--adm-text-muted);">{{ u.profile.phone|default:"—" }}</td>
+          <td style="font-size:0.8rem;color:var(--adm-text-muted);">{{ u.date_joined|date:"M d, Y" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center py-5" style="color:var(--adm-text-muted);">No users found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
-  {% endfor %}
 </div>
-{% endif %}
-<div class="admin-layout">
-  {% include 'admin_panel/_sidebar.html' with active='users' %}
-  <main class="admin-content">
-    <header class="admin-topbar"><h4 class="mb-0">Customers</h4></header>
-    <div class="p-4">
-      <p class="text-muted small mb-3">
-        Looking for delivery riders? They have their own <a href="{% url 'admin_riders' %}">Riders</a> page.
-      </p>
-      <div class="card border-0 shadow-sm">
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="table align-middle">
-              <thead><tr><th>Username</th><th>Name</th><th>Email</th><th>Role</th><th>Phone</th><th>Joined</th></tr></thead>
-              <tbody>
-                {% for u in users %}
-                <tr>
-                  <td>{{ u.username }}</td>
-                  <td>{{ u.first_name }} {{ u.last_name }}</td>
-                  <td>{{ u.email }}</td>
-                  <td>
-                    {% if u.profile %}
-                      <span class="badge bg-{% if u.profile.role == 'admin' %}warning text-dark{% elif u.profile.role == 'rider' %}info text-dark{% else %}secondary{% endif %}">
-                        {{ u.profile.get_role_display }}
-                      </span>
-                    {% else %}—{% endif %}
-                  </td>
-                  <td>{{ u.profile.phone|default:"—" }}</td>
-                  <td>{{ u.date_joined|date:"M d, Y" }}</td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="6" class="text-center text-muted py-4">No users found.</td></tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  </main>
-</div>
-{% endblock full_page %}
+{% endblock %}

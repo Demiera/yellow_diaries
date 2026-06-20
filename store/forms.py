@@ -148,19 +148,26 @@ class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
         fields = ['category', 'name', 'sku', 'slug', 'description', 'price',
-                  'image', 'size', 'stock', 'is_available', 'status']
+                  'image', 'stock', 'is_available', 'status']
         widgets = {
             'category': forms.Select(attrs={'class': 'form-select'}),
             'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'sku': forms.TextInput(attrs={'class': 'form-control'}),
+            'sku': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Leave blank to auto-generate',
+            }),
             'slug': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'size': forms.Select(attrs={'class': 'form-select'}),
             'stock': forms.NumberInput(attrs={'class': 'form-control'}),
             'is_available': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'status': forms.Select(attrs={'class': 'form-select'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # SKU can be auto-generated, so don't force the admin to type one.
+        self.fields['sku'].required = False
 
 
 # ─── CHECKOUT FORM ────────────────────────────────────────────────────────────
